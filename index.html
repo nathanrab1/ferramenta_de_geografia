@@ -5,351 +5,587 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ferramenta de Regionalização - CLIC Geografia</title>
 
+    <!-- CSS -->
+    <link rel="stylesheet" href="src/styles/colors.css">
+    <link rel="stylesheet" href="src/styles/main.css">
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
     <!-- Blockly -->
-    <script src="https://unpkg.com/blockly/blockly.min.js"></script>
-    <script src="https://unpkg.com/blockly/blocks_compressed.js"></script>
-    <script src="https://unpkg.com/blockly/javascript_compressed.js"></script>
-    <script src="https://unpkg.com/blockly/msg/pt-br.js"></script>
-
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            overflow: hidden;
-        }
-
-        #container {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        .panel {
-            height: 100vh;
-            overflow: auto;
-            border-right: 2px solid #ddd;
-        }
-
-        #dados-panel {
-            width: 33.33%;
-            background-color: #fff;
-            padding: 20px;
-        }
-
-        #blockly-panel {
-            width: 33.33%;
-            background-color: #f9f9f9;
-            position: relative;
-        }
-
-        #mapa-panel {
-            width: 33.34%;
-            background-color: #fff;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-        }
-
-        h2 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #e67e22;
-        }
-
-        /* Tabela de dados */
-        #dados-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-            background-color: white;
-        }
-
-        #dados-table thead {
-            background-color: #e67e22;
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        #dados-table th,
-        #dados-table td {
-            padding: 8px;
-            text-align: left;
-            border: 1px solid #ddd;
-        }
-
-        #dados-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        #dados-table tbody tr:hover {
-            background-color: #fff3cd;
-            cursor: pointer;
-        }
-
-        /* Blockly workspace */
-        #blocklyDiv {
-            height: calc(100vh - 60px);
-            width: 100%;
-        }
-
-        #execute-btn {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 5px;
-            cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            z-index: 1000;
-        }
-
-        #execute-btn:hover {
-            background-color: #229954;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0,0,0,0.15);
-        }
-
-        /* Mapa SVG */
-        #mapa-container {
-            width: 100%;
-            height: calc(100vh - 80px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: auto;
-        }
-
-        #mapa-svg {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-        }
-
-        #mapa-svg path,
-        #mapa-svg g {
-            transition: fill 0.3s ease;
-            stroke: #ffffff;
-            stroke-width: 1;
-        }
-
-        #mapa-svg path:hover,
-        #mapa-svg g:hover {
-            opacity: 0.8;
-            cursor: pointer;
-        }
-
-        .info-box {
-            background-color: #ecf0f1;
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            font-size: 13px;
-        }
-
-        .info-box strong {
-            color: #e67e22;
-        }
-    </style>
+    <script src="https://unpkg.com/blockly@10/blockly_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/blocks_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/javascript_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/msg/pt-br.js"></script>
 </head>
 <body>
-    <div id="container">
-        <!-- Painel 1: Dados -->
-        <div id="dados-panel" class="panel">
-            <h2>📊 Dados dos Países</h2>
-            <div class="info-box">
-                <strong>Total de países:</strong> <span id="total-paises">0</span>
-            </div>
-            <div style="overflow-x: auto;">
-                <table id="dados-table">
-                    <thead>
-                        <tr>
-                            <th>País</th>
-                            <th>Região</th>
-                            <th>Idioma</th>
-                            <th>Esporte</th>
-                            <th>IDH</th>
-                            <th>População</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dados-tbody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Painel 2: Blockly -->
-        <div id="blockly-panel" class="panel">
-            <h2 style="padding: 20px; margin: 0; background-color: #34495e; color: white;">🧩 Programação Visual</h2>
-            <div id="blocklyDiv"></div>
-            <button id="execute-btn" onclick="executarCodigo()">▶️ Executar</button>
-        </div>
-
-        <!-- Painel 3: Mapa -->
-        <div id="mapa-panel" class="panel">
-            <h2>🗺️ Mapa das Américas</h2>
-            <div id="mapa-container"></div>
+    <div id="app">
+        <dados-panel v-if="!loading" :paises="paises" :style="{ width: panelWidths[0] + 'px' }"></dados-panel>
+        <div v-if="!loading" class="resizer" @mousedown="startResize(0, $event)"></div>
+        <blockly-panel v-if="!loading" :paises="paises" :style="{ width: panelWidths[1] + 'px' }"></blockly-panel>
+        <div v-if="!loading" class="resizer" @mousedown="startResize(1, $event)"></div>
+        <mapa-panel v-if="!loading" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
+        <div v-if="loading" style="padding: 20px; text-align: center;">
+            <h2>⏳ Carregando...</h2>
         </div>
     </div>
 
+    <!-- Componentes e App -->
     <script>
-        // Dados globais
-        let paisesData = [];
-        let paisesISOMapping = {};
-        let workspace;
+        const { createApp, markRaw } = Vue;
 
-        // Carregar dados
-        async function carregarDados() {
-            try {
-                // Carregar dados dos países
-                const responsePaises = await fetch('paises_data.json');
-                paisesData = await responsePaises.json();
-
-                // Carregar mapeamento ISO
-                const responseISO = await fetch('paises_iso_mapping.json');
-                paisesISOMapping = await responseISO.json();
-
-                // Carregar SVG
-                const responseSVG = await fetch('America_map (2).svg');
-                const svgText = await responseSVG.text();
-                document.getElementById('mapa-container').innerHTML = svgText;
-
-                // Inicializar interface
-                preencherTabela();
-                inicializarBlockly();
-
-                console.log('✅ Dados carregados com sucesso!');
-            } catch (error) {
-                console.error('❌ Erro ao carregar dados:', error);
-                alert('Erro ao carregar os dados. Verifique o console.');
-            }
-        }
-
-        // Preencher tabela de dados
-        function preencherTabela() {
-            const tbody = document.getElementById('dados-tbody');
-            document.getElementById('total-paises').textContent = paisesData.length;
-
-            paisesData.forEach(pais => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${pais['País']}</strong></td>
-                    <td>${pais['Região']}</td>
-                    <td>${pais['Idioma principal']}</td>
-                    <td>${pais['Esporte mais popular']}</td>
-                    <td>${pais['IDH'].toFixed(3)}</td>
-                    <td>${pais['População'].toLocaleString('pt-BR')}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Inicializar Blockly
-        function inicializarBlockly() {
-            // Definir blocos customizados
-            Blockly.Blocks['pintar_pais'] = {
-                init: function() {
-                    this.appendDummyInput()
-                        .appendField("Pintar")
-                        .appendField(new Blockly.FieldDropdown(
-                            paisesData.map(p => [p['País'], p['País']])
-                        ), "PAIS")
-                        .appendField("de cor")
-                        .appendField(new Blockly.FieldColour("#ff0000"), "COR");
-                    this.setPreviousStatement(true, null);
-                    this.setNextStatement(true, null);
-                    this.setColour(160);
-                    this.setTooltip("Pinta um país com a cor escolhida");
-                    this.setHelpUrl("");
-                }
-            };
-
-            // Definir gerador de código JavaScript
-            Blockly.JavaScript['pintar_pais'] = function(block) {
-                const pais = block.getFieldValue('PAIS');
-                const cor = block.getFieldValue('COR');
-                const code = `pintarPais('${pais}', '${cor}');\n`;
-                return code;
-            };
-
-            // Criar workspace
-            workspace = Blockly.inject('blocklyDiv', {
-                toolbox: `
-                    <xml>
-                        <category name="Regionalização" colour="160">
-                            <block type="pintar_pais"></block>
-                        </category>
-                    </xml>
-                `,
-                zoom: {
-                    controls: true,
-                    wheel: true,
-                    startScale: 1.0,
-                    maxScale: 3,
-                    minScale: 0.3,
-                    scaleSpeed: 1.2
+        // Componente: DadosPanel
+        const DadosPanel = {
+            name: 'DadosPanel',
+            props: ['paises'],
+            data() {
+                return {
+                    colunaSelecionada: 'regiao'
+                };
+            },
+            template: `
+                <div class="panel dados-panel">
+                    <h2 class="panel-header">📊 Dados dos Países</h2>
+                    <div class="info-box">
+                        <strong>Total de países:</strong> {{ paises.length }}
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label for="coluna-select" style="margin-right: 10px; font-weight: bold;">Visualizar coluna:</label>
+                        <select id="coluna-select" v-model="colunaSelecionada" style="padding: 5px 10px; border-radius: 5px; border: 2px solid var(--color-primary); background-color: var(--color-bg); color: var(--color-text);">
+                            <option value="regiao">Região</option>
+                            <option value="idioma">Idioma</option>
+                            <option value="esporte">Esporte</option>
+                            <option value="idh">IDH</option>
+                            <option value="populacao">População</option>
+                        </select>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="dados-table">
+                            <thead>
+                                <tr>
+                                    <th>País</th>
+                                    <th v-if="colunaSelecionada === 'regiao'">Região</th>
+                                    <th v-if="colunaSelecionada === 'idioma'">Idioma</th>
+                                    <th v-if="colunaSelecionada === 'esporte'">Esporte</th>
+                                    <th v-if="colunaSelecionada === 'idh'">IDH</th>
+                                    <th v-if="colunaSelecionada === 'populacao'">População</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="pais in paises" :key="pais['País']">
+                                    <td><strong>{{ pais['País'] }}</strong></td>
+                                    <td v-if="colunaSelecionada === 'regiao'">{{ pais['Região'] }}</td>
+                                    <td v-if="colunaSelecionada === 'idioma'">{{ pais['Idioma principal'] }}</td>
+                                    <td v-if="colunaSelecionada === 'esporte'">{{ pais['Esporte mais popular'] }}</td>
+                                    <td v-if="colunaSelecionada === 'idh'">{{ formatarIDH(pais['IDH']) }}</td>
+                                    <td v-if="colunaSelecionada === 'populacao'">{{ formatarNumero(pais['População']) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `,
+            methods: {
+                formatarIDH(idh) {
+                    return idh ? idh.toFixed(3) : '0.000';
                 },
-                trashcan: true,
-                scrollbars: true
-            });
-        }
-
-        // Função para pintar país no SVG
-        function pintarPais(nomePais, cor) {
-            const codigoISO = paisesISOMapping[nomePais];
-
-            if (!codigoISO) {
-                console.warn(`⚠️ País não encontrado no mapeamento: ${nomePais}`);
-                return;
+                formatarNumero(num) {
+                    return num ? num.toLocaleString('pt-BR') : '0';
+                }
             }
+        };
 
-            const svg = document.querySelector('#mapa-container svg');
-            if (!svg) {
-                console.error('❌ SVG não encontrado');
-                return;
+        // Componente: BlocklyPanel
+        const BlocklyPanel = {
+            name: 'BlocklyPanel',
+            props: ['paises'],
+            data() {
+                return {
+                    // markRaw ao atribuir: o workspace do Blockly NAO pode virar
+                    // um Proxy reativo do Vue (veja criarWorkspace)
+                    workspace: null
+                };
+            },
+            template: `
+                <div class="panel blockly-panel">
+                    <h2 class="blockly-header">🧩 Programação Visual</h2>
+                    <div id="blocklyDiv" class="blockly-workspace"></div>
+                    <button class="execute-btn" @click="executarCodigo">▶️ Executar</button>
+                </div>
+            `,
+            mounted() {
+                setTimeout(() => {
+                    this.inicializarBlockly();
+                }, 500);
+
+                // Expor método de resize globalmente
+                window.resizeBlockly = () => {
+                    if (this.workspace) {
+                        Blockly.svgResize(this.workspace);
+                    }
+                };
+            },
+            methods: {
+                inicializarBlockly() {
+                    const paises = this.paises;
+
+                    // Limpar definições anteriores se existirem
+                    delete Blockly.Blocks['iniciar_programa'];
+                    delete Blockly.Blocks['pintar_pais'];
+                    if (Blockly.JavaScript) {
+                        delete Blockly.JavaScript['iniciar_programa'];
+                        delete Blockly.JavaScript['pintar_pais'];
+                    }
+
+                    // Definir bloco de início do programa
+                    Blockly.Blocks['iniciar_programa'] = {
+                        init: function() {
+                            this.appendDummyInput()
+                                .appendField("▶️ Quando executar");
+                            this.setNextStatement(true, null);
+                            this.setColour(120);
+                            this.setTooltip("Bloco inicial do programa");
+                            this.setDeletable(false); // Não pode ser deletado
+                        }
+                    };
+
+                    // Gerador de código para bloco inicial (não gera código, apenas marca início)
+                    Blockly.JavaScript['iniciar_programa'] = function(block) {
+                        return ''; // Bloco inicial não gera código próprio
+                    };
+
+                    // Definir bloco customizado para pintar país
+                    Blockly.Blocks['pintar_pais'] = {
+                        init: function() {
+                            this.appendDummyInput()
+                                .appendField("Pintar");
+                            this.appendDummyInput()
+                                .appendField(new Blockly.FieldDropdown(
+                                    paises.map(p => [p['País'], p['País']])
+                                ), "PAIS");
+                            this.appendDummyInput()
+                                .appendField(new Blockly.FieldDropdown([
+                                    ["🔴 Vermelho", "#ff0000"],
+                                    ["🔵 Azul", "#0000ff"],
+                                    ["🟢 Verde", "#00ff00"],
+                                    ["🟡 Amarelo", "#ffff00"],
+                                    ["🟠 Laranja", "#ff8800"],
+                                    ["🟣 Roxo", "#8800ff"],
+                                    ["🟤 Marrom", "#8b4513"],
+                                    ["⚫ Preto", "#000000"],
+                                    ["⚪ Branco", "#ffffff"],
+                                    ["🩷 Rosa", "#ff69b4"]
+                                ]), "COR");
+                            this.setInputsInline(false);
+                            this.setPreviousStatement(true, null);
+                            this.setNextStatement(true, null);
+                            this.setColour(160);
+                            this.setTooltip("Pinta um país com a cor escolhida");
+                        }
+                    };
+
+                    // Definir gerador de código
+                    Blockly.JavaScript['pintar_pais'] = function(block) {
+                        const pais = block.getFieldValue('PAIS');
+                        const cor = block.getFieldValue('COR');
+                        return `window.pintarPais('${pais}', '${cor}');\n`;
+                    };
+
+                    // Criar workspace
+                    this.criarWorkspace();
+                },
+                criarWorkspace() {
+                    // Criar workspace
+                    // markRaw: sem isso o Vue envolve o workspace em um Proxy reativo.
+                    // Os blocos criados atraves do Proxy ficam com block.workspace !== workspace
+                    // interno do Blockly, e a verificacao de conexao falha com
+                    // "Blocks not on same workspace" (blocos nao encaixam).
+                    this.workspace = markRaw(Blockly.inject('blocklyDiv', {
+                        toolbox: `
+                            <xml>
+                                <block type="pintar_pais"></block>
+                            </xml>
+                        `,
+                        zoom: {
+                            controls: true,
+                            wheel: true,
+                            startScale: 1.0,
+                            maxScale: 3,
+                            minScale: 0.3,
+                            scaleSpeed: 1.2
+                        },
+                        trashcan: true,
+                        scrollbars: true,
+                        move: {
+                            scrollbars: {
+                                horizontal: true,
+                                vertical: true
+                            },
+                            drag: true,
+                            wheel: true
+                        },
+                        grid: {
+                            spacing: 20,
+                            length: 3,
+                            colour: '#ccc',
+                            snap: true
+                        }
+                    }));
+
+                    // Adicionar bloco inicial "Quando executar" no workspace
+                    const blocosIniciais = `
+                        <xml xmlns="https://developers.google.com/blockly/xml">
+                            <block type="iniciar_programa" x="20" y="20"></block>
+                        </xml>
+                    `;
+                    Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(blocosIniciais), this.workspace);
+
+                    // Forçar resize do workspace
+                    Blockly.svgResize(this.workspace);
+
+                    console.log('✅ Workspace pronto com bloco inicial!');
+                },
+                executarCodigo() {
+                    try {
+                        if (!Blockly.JavaScript) {
+                            throw new Error('Gerador JavaScript do Blockly não está disponível');
+                        }
+                        const code = Blockly.JavaScript.workspaceToCode(this.workspace);
+                        console.log('📝 Código:', code);
+                        if (code.trim()) {
+                            eval(code);
+                            console.log('✅ Executado!');
+                        } else {
+                            console.log('⚠️ Nenhum código para executar');
+                        }
+                    } catch (error) {
+                        console.error('❌ Erro:', error);
+                        alert('Erro ao executar: ' + error.message);
+                    }
+                }
             }
+        };
 
-            // Procurar elemento pelo ID
-            let elemento = svg.getElementById(codigoISO);
+        // Componente: MapaPanel
+        const MapaPanel = {
+            name: 'MapaPanel',
+            props: ['paisesIsoMapping'],
+            data() {
+                return {
+                    svgContent: '',
+                    // Controles de zoom e pan
+                    scale: 1,
+                    translateX: 0,
+                    translateY: 0,
+                    isPanning: false,
+                    startPanX: 0,
+                    startPanY: 0
+                };
+            },
+            template: `
+                <div class="panel mapa-panel">
+                    <div
+                        class="mapa-container"
+                        @wheel.prevent="handleWheel"
+                        @dblclick="resetZoom"
+                        @mousedown="startPan"
+                        @mousemove="handlePan"
+                        @mouseup="endPan"
+                        @mouseleave="endPan"
+                        :style="{ cursor: isPanning ? 'grabbing' : 'grab' }"
+                    >
+                        <div
+                            v-html="svgContent"
+                            class="mapa-svg"
+                            :style="{ transform: 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')', transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.1s ease-out' }"
+                        ></div>
+                    </div>
+                </div>
+            `,
+            async mounted() {
+                await this.carregarMapa();
+                window.pintarPais = this.pintarPais;
+            },
+            watch: {
+                // O mapeamento chega depois do mounted (fetch no componente raiz),
+                // entao refazemos o recorte quando ele finalmente carrega.
+                paisesIsoMapping() {
+                    if (this.svgContent) this.ajustarViewBox();
+                }
+            },
+            methods: {
+                async carregarMapa() {
+                    try {
+                        const response = await fetch('src/assets/svg/america_map.svg');
+                        this.svgContent = await response.text();
+                        await this.$nextTick();
+                        this.ocultarNaoAmericanos();
+                        this.ajustarViewBox();
+                        console.log('✅ Mapa carregado');
+                    } catch (error) {
+                        console.error('❌ Erro ao carregar mapa:', error);
+                    }
+                },
+                handleWheel(event) {
+                    // Calcular novo zoom
+                    const delta = event.deltaY > 0 ? -0.1 : 0.1;
+                    const newScale = Math.max(0.5, Math.min(5, this.scale + delta));
 
-            if (elemento) {
-                elemento.style.fill = cor;
-                console.log(`✅ País pintado: ${nomePais} (${codigoISO}) -> ${cor}`);
-            } else {
-                console.warn(`⚠️ Elemento SVG não encontrado para: ${nomePais} (${codigoISO})`);
+                    this.scale = newScale;
+                },
+                // O arquivo de origem e um mapa-mundi recortado, entao ainda traz
+                // territorios que nao fazem parte das Americas.
+                ocultarNaoAmericanos() {
+                    const svg = this.$el.querySelector('svg');
+                    if (!svg) return;
+
+                    // gl = Groenlandia, is = Islandia, aq = Antartida,
+                    // ck/ki/pf/pn = ilhas do Pacifico.
+                    for (const codigoISO of ['gl', 'is', 'aq', 'ck', 'ki', 'pf', 'pn']) {
+                        const elemento = svg.querySelector(`#${codigoISO}`);
+                        if (elemento) elemento.remove();
+                    }
+                },
+                // O viewBox do arquivo (2752x1537) e bem maior que o desenho das
+                // Americas, o que deixava muita area vazia em volta. Aqui medimos
+                // a caixa real dos paises e recortamos o viewBox nela.
+                ajustarViewBox() {
+                    const svg = this.$el.querySelector('svg');
+                    if (!svg) return;
+
+                    const bbox = this.medirPaises(svg) || this.medirTudo(svg);
+                    if (!bbox) return;
+
+                    // Margem pequena para o traco das bordas nao ficar cortado.
+                    const margem = Math.max(bbox.width, bbox.height) * 0.02;
+                    const x = bbox.x - margem;
+                    const y = bbox.y - margem;
+                    const largura = bbox.width + margem * 2;
+                    const altura = bbox.height + margem * 2;
+
+                    svg.setAttribute('viewBox', `${x} ${y} ${largura} ${altura}`);
+                    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+                    // Sem width/height fixos o SVG passa a ocupar o painel inteiro
+                    // seguindo a proporcao do novo viewBox.
+                    svg.removeAttribute('width');
+                    svg.removeAttribute('height');
+                },
+                // Medimos so os paises da base: o arquivo e um mapa-mundi recortado
+                // e ainda carrega territorios distantes (Ilhas Cook, Kiribati,
+                // Polinesia Francesa, Islandia, Antartida) que esticariam a caixa.
+                medirPaises(svg) {
+                    // getBBox() devolve coordenadas no espaco local do elemento e
+                    // varios grupos deste SVG tem transform="matrix(2.19...)". Por
+                    // isso convertemos cada caixa para o espaco da raiz via CTM.
+                    const ctmRaiz = svg.getScreenCTM();
+                    if (!ctmRaiz) return null;
+                    const paraRaiz = ctmRaiz.inverse();
+
+                    let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+
+                    for (const codigoISO of Object.values(this.paisesIsoMapping || {})) {
+                        const elemento = svg.querySelector(`#${codigoISO}`);
+                        if (!elemento) continue;
+
+                        let caixa, ctm;
+                        try {
+                            caixa = elemento.getBBox();
+                            ctm = elemento.getScreenCTM();
+                        } catch (error) {
+                            continue;
+                        }
+                        if (!ctm || (!caixa.width && !caixa.height)) continue;
+
+                        const m = paraRaiz.multiply(ctm);
+                        const cantos = [
+                            [caixa.x, caixa.y],
+                            [caixa.x + caixa.width, caixa.y],
+                            [caixa.x, caixa.y + caixa.height],
+                            [caixa.x + caixa.width, caixa.y + caixa.height]
+                        ];
+
+                        for (const [cx, cy] of cantos) {
+                            const ponto = svg.createSVGPoint();
+                            ponto.x = cx;
+                            ponto.y = cy;
+                            const p = ponto.matrixTransform(m);
+                            x1 = Math.min(x1, p.x);
+                            y1 = Math.min(y1, p.y);
+                            x2 = Math.max(x2, p.x);
+                            y2 = Math.max(y2, p.y);
+                        }
+                    }
+
+                    if (!Number.isFinite(x1)) return null;
+
+                    return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+                },
+                medirTudo(svg) {
+                    try {
+                        const caixa = svg.getBBox();
+                        return caixa.width && caixa.height ? caixa : null;
+                    } catch (error) {
+                        console.warn('⚠️ Nao foi possivel medir o mapa:', error);
+                        return null;
+                    }
+                },
+                resetZoom() {
+                    this.scale = 1;
+                    this.translateX = 0;
+                    this.translateY = 0;
+                },
+                startPan(event) {
+                    this.isPanning = true;
+                    this.startPanX = event.clientX - this.translateX;
+                    this.startPanY = event.clientY - this.translateY;
+                },
+                handlePan(event) {
+                    if (!this.isPanning) return;
+
+                    this.translateX = event.clientX - this.startPanX;
+                    this.translateY = event.clientY - this.startPanY;
+                },
+                endPan() {
+                    this.isPanning = false;
+                },
+                pintarPais(nomePais, cor) {
+                    console.log(`🎨 Tentando pintar: ${nomePais} de ${cor}`);
+
+                    const codigoISO = this.paisesIsoMapping[nomePais];
+                    console.log(`🔍 Código ISO: ${codigoISO}`);
+
+                    if (!codigoISO) {
+                        console.warn(`⚠️ País não encontrado no mapeamento: ${nomePais}`);
+                        return;
+                    }
+
+                    const svg = this.$el.querySelector('svg');
+                    console.log(`📊 SVG encontrado:`, svg ? 'SIM' : 'NÃO');
+
+                    if (!svg) {
+                        console.error('❌ SVG não encontrado no DOM');
+                        return;
+                    }
+
+                    // Usar querySelector ao invés de getElementById
+                    let elemento = svg.querySelector(`#${codigoISO}`);
+                    console.log(`🗺️ Elemento ${codigoISO}:`, elemento ? 'ENCONTRADO' : 'NÃO ENCONTRADO');
+
+                    if (elemento) {
+                        // Pintar o elemento principal
+                        elemento.style.fill = cor;
+                        elemento.setAttribute('fill', cor);
+
+                        // Pintar todos os paths filhos (caso seja um grupo)
+                        const paths = elemento.querySelectorAll('path, polygon, circle, rect, ellipse');
+                        paths.forEach(path => {
+                            path.style.fill = cor;
+                            path.setAttribute('fill', cor);
+                        });
+
+                        console.log(`✅ ${nomePais} (${codigoISO}) pintado de ${cor} (${paths.length} elementos)`);
+                    } else {
+                        console.warn(`⚠️ Elemento SVG não encontrado para: ${codigoISO}`);
+                        // Listar alguns IDs disponíveis para debug
+                        const ids = Array.from(svg.querySelectorAll('[id]')).map(el => el.id).slice(0, 10);
+                        console.log('IDs disponíveis (primeiros 10):', ids);
+                    }
+                }
             }
-        }
+        };
 
-        // Executar código Blockly
-        function executarCodigo() {
-            try {
-                const code = Blockly.JavaScript.workspaceToCode(workspace);
-                console.log('📝 Código gerado:', code);
-                eval(code);
-                console.log('✅ Código executado com sucesso!');
-            } catch (error) {
-                console.error('❌ Erro ao executar código:', error);
-                alert('Erro ao executar o código. Verifique o console.');
+        // App principal
+        const app = createApp({
+            components: {
+                DadosPanel,
+                BlocklyPanel,
+                MapaPanel
+            },
+            data() {
+                return {
+                    paises: [],
+                    paisesISOMapping: {},
+                    loading: true,
+                    panelWidths: [
+                        300,  // Painel de dados mais estreito
+                        window.innerWidth / 3
+                    ],
+                    isResizing: false,
+                    currentResizer: null,
+                    startX: 0,
+                    startWidth: 0
+                };
+            },
+            async mounted() {
+                await this.carregarDados();
+                document.addEventListener('mousemove', this.handleMouseMove);
+                document.addEventListener('mouseup', this.stopResize);
+            },
+            beforeUnmount() {
+                document.removeEventListener('mousemove', this.handleMouseMove);
+                document.removeEventListener('mouseup', this.stopResize);
+            },
+            methods: {
+                async carregarDados() {
+                    try {
+                        // Adicionar timestamp para evitar cache
+                        const timestamp = new Date().getTime();
+                        const [resPaises, resISO] = await Promise.all([
+                            fetch(`src/assets/data/paises_data.json?v=${timestamp}`),
+                            fetch(`src/assets/data/paises_iso_mapping.json?v=${timestamp}`)
+                        ]);
+
+                        this.paises = await resPaises.json();
+                        this.paisesISOMapping = await resISO.json();
+
+                        this.loading = false;
+                        console.log('✅ Dados carregados');
+                        console.log('📋 Primeiros países:', this.paises.slice(0, 3).map(p => p['País']));
+                    } catch (error) {
+                        console.error('❌ Erro:', error);
+                        alert('Erro ao carregar dados. Veja o console.');
+                    }
+                },
+                startResize(panelIndex, event) {
+                    this.isResizing = true;
+                    this.currentResizer = panelIndex;
+                    this.startX = event.clientX;
+                    this.startWidth = this.panelWidths[panelIndex];
+                    event.preventDefault();
+                },
+                handleMouseMove(event) {
+                    if (!this.isResizing) return;
+
+                    const delta = event.clientX - this.startX;
+                    const newWidth = this.startWidth + delta;
+
+                    // Largura mínima de 200px
+                    if (newWidth >= 200) {
+                        this.panelWidths[this.currentResizer] = newWidth;
+
+                        // Se estiver redimensionando o painel do Blockly, atualizar workspace
+                        if (this.currentResizer === 1 && window.resizeBlockly) {
+                            window.resizeBlockly();
+                        }
+                    }
+                },
+                stopResize() {
+                    if (this.isResizing) {
+                        this.isResizing = false;
+                        this.currentResizer = null;
+
+                        // Atualizar workspace do Blockly após redimensionamento
+                        if (window.resizeBlockly) {
+                            setTimeout(() => {
+                                window.resizeBlockly();
+                            }, 50);
+                        }
+                    }
+                }
             }
-        }
+        });
 
-        // Inicializar aplicação
-        window.addEventListener('load', carregarDados);
+        app.mount('#app');
     </script>
 </body>
 </html>

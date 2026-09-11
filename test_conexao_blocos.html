@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Simples - Conexão de Blocos</title>
+    <script src="https://unpkg.com/blockly@10/blockly_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/blocks_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/javascript_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/msg/pt-br.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #blocklyDiv {
+            height: 600px;
+            width: 100%;
+            border: 2px solid #333;
+        }
+        .info {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+        }
+        .info h2 {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+        }
+        .info ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h2>🧪 Teste de Conexão de Blocos Blockly</h2>
+        <p><strong>Instruções:</strong></p>
+        <ul>
+            <li>Arraste o bloco "Pintar" da caixa de ferramentas (esquerda)</li>
+            <li>Solte próximo ao bloco "Pintar" que já está no workspace</li>
+            <li>Os blocos devem se conectar automaticamente</li>
+            <li>Abra o console (F12) para ver logs detalhados</li>
+        </ul>
+    </div>
+    <div id="blocklyDiv"></div>
+
+    <script>
+        console.log('🚀 Iniciando teste...');
+
+        // Definir bloco de início
+        Blockly.Blocks['inicio_programa'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("▶️ Executar Programa");
+                // Apenas nextStatement (não pode conectar acima)
+                this.setNextStatement(true, null);
+                this.setColour(120);
+                this.setTooltip("Início do programa");
+                this.setDeletable(false);
+            }
+        };
+
+        console.log('✅ Bloco inicio_programa definido');
+
+        // Definir bloco de pintar
+        Blockly.Blocks['pintar_pais'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("Pintar")
+                    .appendField(new Blockly.FieldDropdown([
+                        ["Brasil", "Brasil"],
+                        ["Argentina", "Argentina"],
+                        ["Chile", "Chile"]
+                    ]), "PAIS")
+                    .appendField(new Blockly.FieldDropdown([
+                        ["🔴 Vermelho", "#ff0000"],
+                        ["🔵 Azul", "#0000ff"],
+                        ["🟢 Verde", "#00ff00"]
+                    ]), "COR");
+                // previousStatement E nextStatement (pode conectar acima e abaixo)
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(160);
+                this.setTooltip("Pinta um país");
+            }
+        };
+
+        console.log('✅ Bloco pintar_pais definido');
+
+        // Criar workspace com configurações que facilitam conexão
+        const workspace = Blockly.inject('blocklyDiv', {
+            toolbox: {
+                kind: 'flyoutToolbox',
+                contents: [
+                    {
+                        kind: 'block',
+                        type: 'pintar_pais'
+                    }
+                ]
+            },
+            zoom: {
+                controls: true,
+                wheel: true,
+                startScale: 1.0
+            },
+            trashcan: true,
+            scrollbars: true,
+            grid: {
+                spacing: 20,
+                length: 3,
+                colour: '#ccc',
+                snap: true  // Snap ajuda a conectar blocos
+            }
+        });
+
+        console.log('✅ Workspace criado');
+
+        // Event listener para monitorar o que acontece
+        workspace.addChangeListener((event) => {
+            if (event.type === Blockly.Events.BLOCK_MOVE) {
+                const block = workspace.getBlockById(event.blockId);
+                if (block) {
+                    console.log('📦 Bloco movido:', block.type);
+
+                    // Verificar conexões
+                    if (block.previousConnection && block.previousConnection.targetConnection) {
+                        const connectedTo = block.previousConnection.targetConnection.getSourceBlock();
+                        console.log('   ✅ Conectado ACIMA a:', connectedTo.type);
+                    } else if (block.previousConnection) {
+                        console.log('   ⚠️ Tem previousConnection mas NÃO está conectado');
+                    }
+
+                    if (block.nextConnection && block.nextConnection.targetConnection) {
+                        const connectedTo = block.nextConnection.targetConnection.getSourceBlock();
+                        console.log('   ✅ Conectado ABAIXO a:', connectedTo.type);
+                    } else if (block.nextConnection) {
+                        console.log('   ⚠️ Tem nextConnection mas NÃO está conectado');
+                    }
+                }
+            } else if (event.type === Blockly.Events.BLOCK_CREATE) {
+                const block = workspace.getBlockById(event.blockId);
+                console.log('🆕 Bloco criado:', block ? block.type : 'desconhecido');
+            }
+        });
+
+        // Criar blocos iniciais já conectados
+        setTimeout(() => {
+            console.log('🔧 Criando blocos iniciais...');
+
+            const xml = Blockly.utils.xml.textToDom(`
+                <xml>
+                    <block type="inicio_programa" x="100" y="100">
+                        <next>
+                            <block type="pintar_pais">
+                                <field name="PAIS">Brasil</field>
+                                <field name="COR">#ff0000</field>
+                            </block>
+                        </next>
+                    </block>
+                </xml>
+            `);
+
+            Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
+            console.log('✅ Blocos iniciais criados e conectados!');
+
+            // Verificar estado dos blocos
+            const allBlocks = workspace.getAllBlocks();
+            console.log('📋 Blocos no workspace:', allBlocks.length);
+            allBlocks.forEach(block => {
+                console.log(`\n  Bloco: ${block.type}`);
+                console.log(`  - previousConnection: ${block.previousConnection ? 'SIM' : 'NÃO'}`);
+                console.log(`  - nextConnection: ${block.nextConnection ? 'SIM' : 'NÃO'}`);
+
+                if (block.nextConnection && block.nextConnection.targetConnection) {
+                    const connected = block.nextConnection.targetConnection.getSourceBlock();
+                    console.log(`  - ✅ CONECTADO (next) a: ${connected.type}`);
+                }
+                if (block.previousConnection && block.previousConnection.targetConnection) {
+                    const connected = block.previousConnection.targetConnection.getSourceBlock();
+                    console.log(`  - ✅ CONECTADO (previous) a: ${connected.type}`);
+                }
+            });
+        }, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+/*
+ * Paleta de Cores do Projeto CLIC - Geografia
+ * Variáveis CSS para cores consistentes em toda a aplicação
+ */
+
+:root {
+    /* Cores Primárias */
+    --color-primary-red: #9B4B4B;      /* Vermelho/Bordô */
+    --color-primary-blue: #405B7C;     /* Azul escuro */
+    --color-primary-green: #5FA56C;    /* Verde */
+    --color-primary-yellow: #D6A961;   /* Amarelo/Dourado */
+
+    /* Cores Secundárias */
+    --color-secondary-orange: #D87550; /* Laranja/Coral */
+    --color-secondary-teal: #6B9FAF;   /* Azul claro/Turquesa */
+    --color-secondary-purple: #A8A8C8; /* Lilás/Roxo claro */
+
+    /* Cores Neutras */
+    --color-neutral-gray: #A8A8A8;     /* Cinza */
+    --color-neutral-black: #2C2C2C;    /* Preto */
+    --color-neutral-dark: #3C3C3C;     /* Cinza escuro */
+    --color-neutral-beige: #E8D9C8;    /* Bege/Creme */
+    --color-neutral-white: #FFFFFF;    /* Branco */
+
+    /* Cores de Fundo */
+    --bg-primary: #F5F5F5;             /* Fundo principal */
+    --bg-secondary: #FFFFFF;           /* Fundo secundário */
+    --bg-dark: #34495E;                /* Fundo escuro */
+
+    /* Cores de Texto */
+    --text-primary: #2C3E50;           /* Texto principal */
+    --text-secondary: #7F8C8D;         /* Texto secundário */
+    --text-light: #FFFFFF;             /* Texto claro */
+
+    /* Cores de Destaque */
+    --accent-orange: #E67E22;          /* Laranja de destaque */
+    --accent-green: #27AE60;           /* Verde de destaque */
+    --accent-blue: #3498DB;            /* Azul de destaque */
+
+    /* Cores de Estado */
+    --success: #5FA56C;                /* Sucesso */
+    --warning: #D6A961;                /* Aviso */
+    --error: #9B4B4B;                  /* Erro */
+    --info: #6B9FAF;                   /* Informação */
+
+    /* Cores de Sombra e Borda */
+    --shadow-light: rgba(0, 0, 0, 0.1);
+    --shadow-medium: rgba(0, 0, 0, 0.15);
+    --shadow-dark: rgba(0, 0, 0, 0.3);
+    --border-light: #DDD;
+    --border-medium: #BBB;
+    --border-dark: #999;
+}
+
+/* Modo Escuro (opcional para futuro) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-primary: #1E1E1E;
+        --bg-secondary: #2C2C2C;
+        --text-primary: #E0E0E0;
+        --text-secondary: #B0B0B0;
+        --border-light: #3C3C3C;
+    }
+}

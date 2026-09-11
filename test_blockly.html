@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Blockly - Conexão de Blocos</title>
+    <script src="https://unpkg.com/blockly@10/blockly_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/blocks_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/javascript_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/msg/pt-br.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #blocklyDiv {
+            height: 600px;
+            width: 100%;
+            border: 2px solid #ccc;
+        }
+        .info {
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h2>🧪 Teste de Conexão de Blocos</h2>
+        <p>Verifique o console do navegador (F12) para ver os logs detalhados</p>
+    </div>
+    <div id="blocklyDiv"></div>
+
+    <script>
+        console.log('🚀 Iniciando teste Blockly...');
+
+        // Definir bloco de início
+        Blockly.Blocks['inicio_programa'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("▶️ Executar Programa");
+                this.setNextStatement(true, null);
+                this.setColour(120);
+                this.setTooltip("Início do programa");
+            }
+        };
+
+        console.log('✅ Bloco inicio_programa definido');
+
+        // Definir bloco de pintar
+        Blockly.Blocks['pintar_pais'] = {
+            init: function() {
+                this.appendDummyInput()
+                    .appendField("Pintar país")
+                    .appendField(new Blockly.FieldDropdown([
+                        ["Brasil", "Brasil"],
+                        ["Argentina", "Argentina"]
+                    ]), "PAIS")
+                    .appendField("de cor")
+                    .appendField(new Blockly.FieldDropdown([
+                        ["🔴 Vermelho", "#ff0000"],
+                        ["🔵 Azul", "#0000ff"]
+                    ]), "COR");
+                this.setPreviousStatement(true, null);
+                this.setNextStatement(true, null);
+                this.setColour(160);
+                this.setTooltip("Pinta um país");
+            }
+        };
+
+        console.log('✅ Bloco pintar_pais definido');
+
+        // Criar workspace
+        const workspace = Blockly.inject('blocklyDiv', {
+            toolbox: `
+                <xml>
+                    <block type="inicio_programa"></block>
+                    <block type="pintar_pais"></block>
+                </xml>
+            `,
+            zoom: {
+                controls: true,
+                wheel: true,
+                startScale: 1.0
+            },
+            trashcan: true,
+            scrollbars: true
+        });
+
+        console.log('✅ Workspace criado');
+
+        // Aguardar um momento antes de adicionar blocos
+        setTimeout(() => {
+            console.log('🔧 Tentando criar e conectar blocos...');
+
+            // Criar bloco de início
+            const blocoInicio = workspace.newBlock('inicio_programa');
+            console.log('📦 Bloco inicio criado:', blocoInicio);
+
+            blocoInicio.initSvg();
+            blocoInicio.render();
+            blocoInicio.moveBy(100, 100);
+
+            console.log('🔌 NextConnection do bloco inicio:', blocoInicio.nextConnection);
+
+            // Criar bloco de pintar
+            const blocoPintar = workspace.newBlock('pintar_pais');
+            console.log('📦 Bloco pintar criado:', blocoPintar);
+
+            blocoPintar.initSvg();
+            blocoPintar.render();
+
+            console.log('🔌 PreviousConnection do bloco pintar:', blocoPintar.previousConnection);
+
+            // Tentar conectar
+            console.log('🔗 Tentando conectar blocos...');
+
+            if (blocoInicio.nextConnection && blocoPintar.previousConnection) {
+                console.log('✓ Ambas as conexões existem');
+                console.log('  - nextConnection tipo:', blocoInicio.nextConnection.type_);
+                console.log('  - previousConnection tipo:', blocoPintar.previousConnection.type_);
+
+                try {
+                    // Método 1: connect do nextConnection
+                    blocoInicio.nextConnection.connect(blocoPintar.previousConnection);
+                    console.log('✅ SUCESSO! Blocos conectados!');
+                } catch (error) {
+                    console.error('❌ ERRO ao conectar:', error);
+                    console.error('Detalhes do erro:', error.message);
+                }
+            } else {
+                console.error('❌ Conexões não existem!');
+                console.error('  - nextConnection:', blocoInicio.nextConnection);
+                console.error('  - previousConnection:', blocoPintar.previousConnection);
+            }
+
+            // Verificar se estão conectados
+            setTimeout(() => {
+                const conectado = blocoInicio.nextConnection &&
+                                 blocoInicio.nextConnection.targetConnection === blocoPintar.previousConnection;
+                console.log('🔍 Verificação final - Blocos conectados?', conectado);
+
+                if (!conectado) {
+                    console.error('❌ Os blocos NÃO estão conectados após a tentativa!');
+                    console.log('Tentando método alternativo...');
+
+                    // Método alternativo: usar a API do workspace
+                    try {
+                        workspace.getBlockById(blocoInicio.id).nextConnection.connect(
+                            workspace.getBlockById(blocoPintar.id).previousConnection
+                        );
+                        console.log('✅ Método alternativo funcionou!');
+                    } catch (err) {
+                        console.error('❌ Método alternativo também falhou:', err);
+                    }
+                }
+            }, 500);
+
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-primary);
+    overflow: hidden;
+    color: var(--text-primary);
+}
+
+#app {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    position: relative;
+}
+
+/* Painel genérico */
+.panel {
+    height: 100vh;
+    overflow: auto;
+    flex-shrink: 0;
+}
+
+/* Divisor redimensionável */
+.resizer {
+    width: 5px;
+    height: 100vh;
+    background-color: var(--border-light);
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.resizer:hover {
+    background-color: var(--accent-orange);
+}
+
+.resizer:active {
+    background-color: var(--color-secondary-orange);
+}
+
+.resizer::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+}
+
+.panel-header {
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    padding: 20px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--accent-orange);
+    background-color: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Painel de Dados */
+.dados-panel {
+    background-color: #fff;
+    padding: 20px;
+    min-width: 200px;
+}
+
+.info-box {
+    background-color: var(--color-neutral-beige);
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-size: 13px;
+}
+
+.info-box strong {
+    color: var(--accent-orange);
+}
+
+.dados-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    background-color: white;
+}
+
+.dados-table thead {
+    background-color: var(--accent-orange);
+    color: var(--text-light);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.dados-table th,
+.dados-table td {
+    padding: 8px;
+    text-align: left;
+    border: 1px solid #ddd;
+    color: #000;
+    font-weight: 500;
+}
+
+/* Otimizar largura das colunas */
+.dados-table th:first-child,
+.dados-table td:first-child {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.dados-table th:not(:first-child),
+.dados-table td:not(:first-child) {
+    width: auto;
+    max-width: 150px;
+}
+
+/* Fazer a tabela ocupar apenas o espaço necessário */
+.dados-table {
+    width: auto;
+    min-width: 100%;
+}
+
+.dados-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.dados-table tbody tr:hover {
+    background-color: #fff3cd;
+    cursor: pointer;
+}
+
+/* Painel Blockly */
+.blockly-panel {
+    background-color: #f9f9f9;
+    position: relative;
+    min-width: 200px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.blockly-header {
+    padding: 20px;
+    margin: 0;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    flex-shrink: 0;
+}
+
+.blockly-workspace {
+    flex: 1;
+    width: 100%;
+    position: relative;
+}
+
+.execute-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--accent-green);
+    color: var(--text-light);
+    border: none;
+    padding: 15px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px var(--shadow-light);
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.execute-btn:hover {
+    background-color: var(--success);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px var(--shadow-medium);
+}
+
+/* Painel Mapa */
+.mapa-panel {
+    background-color: #fff;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    /* flex-shrink: 1 + min-width: 0 sobrescrevem .panel { flex-shrink: 0 }.
+       Sem isso o tamanho intrinseco do SVG (2752px) empurraria o painel
+       para fora da tela em vez de o mapa se ajustar ao espaco disponivel. */
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.mapa-container {
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    /* position + inset no .mapa-svg dao uma caixa de tamanho definido ao SVG;
+       sem isso o height: 100% dele nao resolve e o mapa estoura o painel. */
+    position: relative;
+    overflow: hidden;
+}
+
+.mapa-svg {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    bottom: 4px;
+    left: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mapa-svg svg {
+    /* O viewBox e recortado no MapaPanel para a caixa real do desenho, entao
+       o SVG pode ocupar todo o container: o preserveAspectRatio cuida do
+       encaixe sem distorcer. */
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.mapa-svg path,
+.mapa-svg g {
+    transition: fill 0.3s ease;
+    stroke: #ffffff;
+    stroke-width: 1;
+}
+
+.mapa-svg path:hover,
+.mapa-svg g:hover {
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+/* Cursor de arrastar */
+.mapa-container {
+    user-select: none;
+}
+
+.mapa-container[style*="cursor: grabbing"] .mapa-svg path,
+.mapa-container[style*="cursor: grabbing"] .mapa-svg g {
+    cursor: grabbing !important;
+}

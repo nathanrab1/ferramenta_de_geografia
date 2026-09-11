@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Mínimo Blockly</title>
+    <script src="https://unpkg.com/blockly@10/blockly_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/blocks_compressed.js"></script>
+    <script src="https://unpkg.com/blockly@10/javascript_compressed.js"></script>
+    <style>
+        body { margin: 20px; font-family: Arial, sans-serif; }
+        #blocklyDiv { height: 600px; width: 100%; border: 2px solid #000; }
+        .info { background: #ffffcc; padding: 15px; margin-bottom: 20px; border: 2px solid #ff9900; }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <h2>⚠️ Teste Mínimo - Se não funcionar aqui, é problema do Blockly</h2>
+        <p><strong>O QUE FAZER:</strong></p>
+        <ol>
+            <li>Arraste o bloco verde "logic_boolean" da toolbox (esquerda)</li>
+            <li>Solte em QUALQUER lugar do workspace (área branca)</li>
+            <li>Arraste outro bloco "logic_boolean"</li>
+            <li>Se você conseguir conectá-los, o Blockly está funcionando</li>
+        </ol>
+        <p><strong>Console (F12):</strong> Abra para ver mensagens</p>
+    </div>
+    <div id="blocklyDiv"></div>
+
+    <script>
+        // Usar apenas blocos padrão do Blockly (que sabemos que funcionam)
+        const workspace = Blockly.inject('blocklyDiv', {
+            toolbox: document.getElementById('toolbox')
+        });
+
+        console.log('✅ Workspace criado');
+        console.log('Versão do Blockly:', Blockly.VERSION);
+
+        // Criar um bloco programaticamente para testar
+        setTimeout(() => {
+            console.log('🔧 Criando blocos de teste...');
+
+            // Criar bloco superior
+            const bloco1 = workspace.newBlock('controls_if');
+            bloco1.initSvg();
+            bloco1.render();
+            bloco1.moveBy(100, 100);
+
+            console.log('Bloco 1 criado:', bloco1.type);
+            console.log('  - nextConnection:', bloco1.nextConnection);
+
+            // Criar segundo bloco
+            const bloco2 = workspace.newBlock('controls_if');
+            bloco2.initSvg();
+            bloco2.render();
+            bloco2.moveBy(100, 200);
+
+            console.log('Bloco 2 criado:', bloco2.type);
+            console.log('  - previousConnection:', bloco2.previousConnection);
+
+            // FORÇAR conexão programaticamente
+            console.log('🔗 Tentando conectar blocos...');
+
+            if (bloco1.nextConnection && bloco2.previousConnection) {
+                console.log('Ambas conexões existem, tentando conectar...');
+                try {
+                    bloco1.nextConnection.connect(bloco2.previousConnection);
+                    console.log('✅ CONEXÃO FEITA COM SUCESSO!');
+
+                    // Verificar
+                    if (bloco1.nextConnection.targetConnection === bloco2.previousConnection) {
+                        console.log('✅ VERIFICADO: Blocos estão conectados!');
+                    } else {
+                        console.log('❌ ERRO: Conexão não foi estabelecida');
+                    }
+                } catch (error) {
+                    console.error('❌ ERRO ao conectar:', error);
+                }
+            } else {
+                console.error('❌ Conexões não existem!');
+            }
+        }, 1000);
+
+        // Event listener
+        workspace.addChangeListener((event) => {
+            console.log('Event:', event.type, event);
+        });
+    </script>
+
+    <!-- Toolbox com blocos padrão -->
+    <xml xmlns="https://developers.google.com/blockly/xml" id="toolbox" style="display: none">
+        <block type="controls_if"></block>
+        <block type="logic_compare"></block>
+        <block type="logic_boolean"></block>
+        <block type="text"></block>
+    </xml>
+</body>
+</html>
