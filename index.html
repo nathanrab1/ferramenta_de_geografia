@@ -7,8 +7,8 @@
 
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
-    <link rel="stylesheet" href="src/styles/colors.css?v=11">
-    <link rel="stylesheet" href="src/styles/main.css?v=11">
+    <link rel="stylesheet" href="src/styles/colors.css?v=12">
+    <link rel="stylesheet" href="src/styles/main.css?v=12">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -22,9 +22,9 @@
 <body>
     <div id="app">
         <dados-panel v-if="!loading" :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
-        <div v-if="!loading" class="resizer" @mousedown="startResize(0, $event)"></div>
+        <div v-if="!loading" class="resizer" @pointerdown="startResize(0, $event)"></div>
         <blockly-panel v-if="!loading" ref="blockly" :paises="paisesOrdenados" :coluna="colunaSelecionada" :style="{ width: panelWidths[1] + 'px' }" @baixar-projeto="baixarProjeto" @abrir-projeto="abrirProjeto"></blockly-panel>
-        <div v-if="!loading" class="resizer" @mousedown="startResize(1, $event)"></div>
+        <div v-if="!loading" class="resizer" @pointerdown="startResize(1, $event)"></div>
         <mapa-panel v-if="!loading" :paises="paises" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
         <div v-if="loading" class="carregando">
             <h2>⏳ Carregando...</h2>
@@ -164,6 +164,13 @@
                     isPanning: false,
                     startPanX: 0,
                     startPanY: 0,
+                    // Ponteiros (mouse, dedos, caneta) apoiados no mapa:
+                    // id -> {x, y}. Um ponteiro arrasta; dois fazem pinça.
+                    ponteiros: new Map(),
+                    // Se o gesto atual chegou a mover o mapa: um toque que
+                    // não move é um "tap" (tooltip / duplo toque)
+                    gestoMoveu: false,
+                    ultimoToque: null,
                     // Velocidade da pintura (1 = lento ... 10 = rápido)
                     velocidade: 9,
                     // Itens {cor, rotulo, detalhe} montados pelo
@@ -198,10 +205,11 @@
                             class="mapa-container"
                             @wheel.prevent="handleWheel"
                             @dblclick="resetZoom"
-                            @mousedown="startPan"
-                            @mousemove="handleMouseMove"
-                            @mouseup="endPan"
-                            @mouseleave="handleMouseLeave"
+                            @pointerdown="onPointerDown"
+                            @pointermove="onPointerMove"
+                            @pointerup="onPointerUp"
+                            @pointercancel="onPointerUp"
+                            @pointerleave="onPointerLeave"
                             :style="{ cursor: isPanning ? 'grabbing' : 'grab' }"
                         >
                             <div
@@ -282,19 +290,21 @@
                 },
                 handleWheel(event) {
                     const delta = event.deltaY > 0 ? -0.1 : 0.1;
-                    const novaEscala = Math.max(0.5, Math.min(5, this.scale + delta));
+                    this.aplicarZoom(this.scale + delta, event.clientX, event.clientY);
+                },
+                // Zoom ancorado no ponto (clientX, clientY): o ponto do mapa
+                // que está ali continua ali depois da mudança de escala.
+                // O transform é translate(t) scale(s) com origem no centro C
+                // do container, então um ponto p do mapa vai parar em
+                // C + t + s*(p - C). Mantendo M = C + t + s*(p - C) para a
+                // nova escala s', a translação vira
+                // t' = (M - C) - (s'/s) * (M - C - t).
+                aplicarZoom(escala, clientX, clientY) {
+                    const novaEscala = Math.max(0.5, Math.min(5, escala));
                     if (novaEscala === this.scale) return;
-
-                    // Zoom centrado no cursor: o ponto do mapa sob o mouse
-                    // continua sob o mouse depois da mudança de escala.
-                    // O transform é translate(t) scale(s) com origem no
-                    // centro C do container, então um ponto p do mapa vai
-                    // parar em C + t + s*(p - C). Mantendo M = C + t + s*(p - C)
-                    // para a nova escala s', a translação vira
-                    // t' = (M - C) - (s'/s) * (M - C - t).
-                    const caixa = event.currentTarget.getBoundingClientRect();
-                    const mx = event.clientX - caixa.left - caixa.width / 2;
-                    const my = event.clientY - caixa.top - caixa.height / 2;
+                    const caixa = this.$refs.area.getBoundingClientRect();
+                    const mx = clientX - caixa.left - caixa.width / 2;
+                    const my = clientY - caixa.top - caixa.height / 2;
                     const razao = novaEscala / this.scale;
                     this.translateX = mx - razao * (mx - this.translateX);
                     this.translateY = my - razao * (my - this.translateY);
@@ -415,27 +425,100 @@
                     this.translateX = 0;
                     this.translateY = 0;
                 },
-                startPan(event) {
+                // Pan e pinça com Pointer Events, que cobrem mouse, dedo e
+                // caneta. O .mapa-container tem touch-action: none no CSS;
+                // sem isso o iPad rolaria/ampliaria a página em vez de
+                // entregar os movimentos ao mapa.
+                onPointerDown(event) {
+                    if (event.pointerType === 'mouse' && event.button !== 0) return;
+                    // x0/y0: onde o ponteiro começou, para distinguir tap de arrasto
+                    this.ponteiros.set(event.pointerId, { x: event.clientX, y: event.clientY, x0: event.clientX, y0: event.clientY });
+                    if (this.ponteiros.size === 1) {
+                        this.gestoMoveu = false;
+                        this.iniciarPan(event.clientX, event.clientY);
+                    }
                     this.isPanning = true;
-                    this.startPanX = event.clientX - this.translateX;
-                    this.startPanY = event.clientY - this.translateY;
-                },
-                handlePan(event) {
-                    if (!this.isPanning) return;
-
-                    this.translateX = event.clientX - this.startPanX;
-                    this.translateY = event.clientY - this.startPanY;
-                },
-                endPan() {
-                    this.isPanning = false;
-                },
-                handleMouseMove(event) {
-                    this.handlePan(event);
-                    this.atualizarTooltip(event);
-                },
-                handleMouseLeave() {
-                    this.endPan();
                     this.tooltip = null;
+                },
+                iniciarPan(x, y) {
+                    this.startPanX = x - this.translateX;
+                    this.startPanY = y - this.translateY;
+                },
+                onPointerMove(event) {
+                    const ponteiro = this.ponteiros.get(event.pointerId);
+                    if (!ponteiro) {
+                        // Mouse passeando sem botão apertado
+                        if (event.pointerType === 'mouse') this.atualizarTooltip(event);
+                        return;
+                    }
+                    if (this.ponteiros.size >= 2) {
+                        this.moverPinca(ponteiro, event);
+                    } else {
+                        ponteiro.x = event.clientX;
+                        ponteiro.y = event.clientY;
+                        this.translateX = event.clientX - this.startPanX;
+                        this.translateY = event.clientY - this.startPanY;
+                    }
+                    // Tolerância para o tremor do dedo num toque parado
+                    if (this.ponteiros.size >= 2 || Math.hypot(event.clientX - ponteiro.x0, event.clientY - ponteiro.y0) > 8) {
+                        this.gestoMoveu = true;
+                    }
+                },
+                // Pinça: os dois primeiros dedos definem uma distância e um
+                // ponto médio. A escala muda pela razão das distâncias,
+                // ancorada no ponto médio antigo, e o mapa acompanha o
+                // deslocamento do ponto médio.
+                moverPinca(ponteiro, event) {
+                    const [a, b] = [...this.ponteiros.values()];
+                    const distAntes = Math.hypot(a.x - b.x, a.y - b.y);
+                    const medioAntes = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+                    ponteiro.x = event.clientX;
+                    ponteiro.y = event.clientY;
+                    const distDepois = Math.hypot(a.x - b.x, a.y - b.y);
+                    const medioDepois = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+                    if (distAntes > 0 && distDepois > 0) {
+                        this.aplicarZoom(this.scale * distDepois / distAntes, medioAntes.x, medioAntes.y);
+                    }
+                    this.translateX += medioDepois.x - medioAntes.x;
+                    this.translateY += medioDepois.y - medioAntes.y;
+                },
+                onPointerUp(event) {
+                    if (!this.ponteiros.delete(event.pointerId)) return;
+                    if (this.ponteiros.size === 1) {
+                        // Da pinça para o arrasto: recomeça do dedo que ficou
+                        const [restante] = this.ponteiros.values();
+                        this.iniciarPan(restante.x, restante.y);
+                    } else if (this.ponteiros.size === 0) {
+                        this.isPanning = false;
+                        if (event.pointerType !== 'mouse' && !this.gestoMoveu && event.type === 'pointerup') {
+                            this.tratarToque(event);
+                        }
+                    }
+                },
+                onPointerLeave(event) {
+                    // Só o mouse "sai" do mapa no meio do gesto; para o dedo
+                    // o pointerleave vem depois do pointerup, já tratado
+                    if (event.pointerType !== 'mouse') return;
+                    this.ponteiros.delete(event.pointerId);
+                    if (this.ponteiros.size === 0) this.isPanning = false;
+                    this.tooltip = null;
+                },
+                // Toque sem arrastar: duplo toque reseta o zoom; toque num
+                // país mostra o tooltip dele (no lugar do hover do mouse)
+                tratarToque(event) {
+                    const agora = Date.now();
+                    const anterior = this.ultimoToque;
+                    this.ultimoToque = { x: event.clientX, y: event.clientY, t: agora };
+                    if (anterior && agora - anterior.t < 350
+                        && Math.hypot(event.clientX - anterior.x, event.clientY - anterior.y) < 30) {
+                        this.ultimoToque = null;
+                        this.resetZoom();
+                        return;
+                    }
+                    // Com o dedo o event.target é onde o toque começou;
+                    // o elemento sob o ponto final é mais confiável
+                    const alvo = document.elementFromPoint(event.clientX, event.clientY);
+                    this.mostrarTooltip(this.paisSobMouse(alvo), event.clientX, event.clientY);
                 },
                 // Sobe do elemento sob o mouse até achar um id que seja código
                 // ISO de país (os países do SVG têm sub-paths sem id útil)
@@ -447,7 +530,9 @@
                 },
                 atualizarTooltip(event) {
                     if (this.isPanning) { this.tooltip = null; return; }
-                    const pais = this.paisSobMouse(event.target);
+                    this.mostrarTooltip(this.paisSobMouse(event.target), event.clientX, event.clientY);
+                },
+                mostrarTooltip(pais, clientX, clientY) {
                     if (!pais) { this.tooltip = null; return; }
 
                     // o tooltip e posicionado dentro de .mapa-area (nao do painel)
@@ -458,11 +543,11 @@
                         atributos: Object.keys(pais)
                             .filter(c => this.colunasVisualizadas.includes(c))
                             .map(c => ({ rotulo: c, valor: pais[c] })),
-                        x: event.clientX - caixa.left,
-                        y: event.clientY - caixa.top,
+                        x: clientX - caixa.left,
+                        y: clientY - caixa.top,
                         // Na metade direita do painel o tooltip abre para a
                         // esquerda do cursor, senão seria cortado pela borda
-                        aEsquerda: event.clientX - caixa.left > caixa.width / 2
+                        aEsquerda: clientX - caixa.left > caixa.width / 2
                     };
                 },
                 resetarMapa() {
@@ -603,12 +688,15 @@
             },
             async mounted() {
                 await this.carregarDados();
-                document.addEventListener('mousemove', this.handleMouseMove);
-                document.addEventListener('mouseup', this.stopResize);
+                // Pointer Events: o divisor também se arrasta com o dedo
+                document.addEventListener('pointermove', this.handleMouseMove);
+                document.addEventListener('pointerup', this.stopResize);
+                document.addEventListener('pointercancel', this.stopResize);
             },
             beforeUnmount() {
-                document.removeEventListener('mousemove', this.handleMouseMove);
-                document.removeEventListener('mouseup', this.stopResize);
+                document.removeEventListener('pointermove', this.handleMouseMove);
+                document.removeEventListener('pointerup', this.stopResize);
+                document.removeEventListener('pointercancel', this.stopResize);
             },
             methods: {
                 async carregarDados() {

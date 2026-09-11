@@ -15,6 +15,10 @@ body {
     overflow: hidden;
     color: var(--text-primary);
     -webkit-font-smoothing: antialiased;
+    /* Touch: sem o atraso de 300ms nem o zoom por duplo toque da página;
+       o mapa e o Blockly cuidam dos próprios gestos */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 #app {
@@ -40,6 +44,8 @@ body {
     flex-shrink: 0;
     transition: background-color 0.2s;
     position: relative;
+    /* O arrasto do divisor é tratado por Pointer Events */
+    touch-action: none;
 }
 
 .resizer:hover {
@@ -569,16 +575,22 @@ body {
 
 /* Destaque do pais sob o mouse. Usamos brightness em vez de opacity: com
    opacidade o pais fica translucido e o poligono #grandes-lagos (que fica
-   atras dele) aparecia como um retangulo azul. */
-.mapa-svg path:hover,
-.mapa-svg g:hover {
-    filter: brightness(1.12);
-    cursor: pointer;
+   atras dele) aparecia como um retangulo azul. Só com mouse: no touch o
+   :hover "gruda" no último país tocado. */
+@media (hover: hover) {
+    .mapa-svg path:hover,
+    .mapa-svg g:hover {
+        filter: brightness(1.12);
+        cursor: pointer;
+    }
 }
 
 /* Cursor de arrastar */
 .mapa-container {
     user-select: none;
+    -webkit-user-select: none;
+    /* Pan e pinça são do mapa (Pointer Events no MapaPanel), não do navegador */
+    touch-action: none;
 }
 
 .mapa-container[style*="cursor: grabbing"] .mapa-svg path,
@@ -594,4 +606,48 @@ body {
     justify-content: center;
     color: var(--text-secondary);
     font-weight: 500;
+}
+
+/* Tablets e telas de toque: alvos maiores (mínimo ~44px, recomendação
+   da Apple) e área de pegada mais larga nos divisores dos painéis */
+@media (pointer: coarse) {
+    .resizer::before {
+        left: -10px;
+        right: -10px;
+    }
+
+    .coluna-seletor select,
+    .btn-contorno {
+        min-height: 44px;
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .dados-table th,
+    .dados-table td {
+        padding: 12px 14px;
+    }
+
+    .dados-table {
+        font-size: 14px;
+    }
+
+    .execute-btn,
+    .reset-btn {
+        min-height: 48px;
+        padding: 12px 28px;
+    }
+
+    .velocidade-ctrl {
+        min-height: 48px;
+    }
+
+    .velocidade-ctrl input[type="range"] {
+        width: 160px;
+        height: 44px;
+    }
+
+    .mapa-legenda-item {
+        font-size: 16px;
+    }
 }
