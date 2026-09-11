@@ -21,7 +21,7 @@
 </head>
 <body>
     <div id="app">
-        <dados-panel v-if="!loading" :paises="paises" :style="{ width: panelWidths[0] + 'px' }"></dados-panel>
+        <dados-panel v-if="!loading" :paises="paises" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(0, $event)"></div>
         <blockly-panel v-if="!loading" :paises="paises" :style="{ width: panelWidths[1] + 'px' }"></blockly-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(1, $event)"></div>
@@ -41,43 +41,56 @@
         const DadosPanel = {
             name: 'DadosPanel',
             props: ['paises'],
+            emits: ['largura'],
             data() {
                 return {
-                    colunaSelecionada: 'regiao'
+                    colunaSelecionada: 'Região'
                 };
+            },
+            watch: {
+                // Ao trocar a coluna (ou carregar os dados), avisa o App a
+                // largura que a tabela precisa para o painel se ajustar
+                colunaSelecionada: 'emitirLargura',
+                paises: 'emitirLargura'
+            },
+            mounted() {
+                this.emitirLargura();
+            },
+            computed: {
+                // Todas as colunas dos dados, exceto o nome do país e as
+                // coordenadas do mapa (uso interno)
+                colunas() {
+                    if (!this.paises.length) return [];
+                    return Object.keys(this.paises[0])
+                        .filter(c => c !== 'País' && !c.startsWith('Coordenada'));
+                },
+                // Colunas numéricas são alinhadas à direita
+                colunaNumerica() {
+                    return this.paises.some(p => typeof p[this.colunaSelecionada] === 'number');
+                }
             },
             template: `
                 <div class="panel dados-panel">
                     <div class="coluna-seletor">
                         <label for="coluna-select">Visualizar coluna:</label>
                         <select id="coluna-select" v-model="colunaSelecionada">
-                            <option value="regiao">Região</option>
-                            <option value="idioma">Idioma</option>
-                            <option value="esporte">Esporte</option>
-                            <option value="idh">IDH</option>
-                            <option value="populacao">População</option>
+                            <option v-for="coluna in colunas" :key="coluna" :value="coluna">
+                                {{ coluna }}
+                            </option>
                         </select>
                     </div>
                     <div style="overflow-x: auto;">
-                        <table class="dados-table">
+                        <table class="dados-table" ref="tabela">
                             <thead>
                                 <tr>
                                     <th>País</th>
-                                    <th v-if="colunaSelecionada === 'regiao'">Região</th>
-                                    <th v-if="colunaSelecionada === 'idioma'">Idioma</th>
-                                    <th v-if="colunaSelecionada === 'esporte'">Esporte</th>
-                                    <th v-if="colunaSelecionada === 'idh'">IDH</th>
-                                    <th v-if="colunaSelecionada === 'populacao'">População</th>
+                                    <th :class="{ numerico: colunaNumerica }">{{ colunaSelecionada }}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="pais in paises" :key="pais['País']">
                                     <td><strong>{{ pais['País'] }}</strong></td>
-                                    <td v-if="colunaSelecionada === 'regiao'">{{ pais['Região'] }}</td>
-                                    <td v-if="colunaSelecionada === 'idioma'">{{ pais['Idioma principal'] }}</td>
-                                    <td v-if="colunaSelecionada === 'esporte'">{{ pais['Esporte mais popular'] }}</td>
-                                    <td v-if="colunaSelecionada === 'idh'">{{ formatarIDH(pais['IDH']) }}</td>
-                                    <td v-if="colunaSelecionada === 'populacao'">{{ formatarNumero(pais['População']) }}</td>
+                                    <td :class="{ numerico: colunaNumerica }">{{ formatarValor(pais[colunaSelecionada], colunaSelecionada) }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -85,11 +98,25 @@
                 </div>
             `,
             methods: {
-                formatarIDH(idh) {
-                    return idh ? idh.toFixed(3) : '0.000';
+                emitirLargura() {
+                    this.$nextTick(() => {
+                        const tabela = this.$refs.tabela;
+                        if (!tabela) return;
+                        const estilo = getComputedStyle(this.$el);
+                        const padding = parseFloat(estilo.paddingLeft) + parseFloat(estilo.paddingRight);
+                        // Folga para a barra de rolagem vertical do painel
+                        this.$emit('largura', Math.ceil(tabela.offsetWidth + padding + 20));
+                    });
                 },
-                formatarNumero(num) {
-                    return num ? num.toLocaleString('pt-BR') : '0';
+                formatarValor(valor, coluna) {
+                    if (valor === null || valor === undefined) return '-';
+                    if (typeof valor !== 'number') return valor;
+                    // Formato brasileiro: vírgula decimal e ponto de milhar.
+                    // Casas decimais fixas por coluna (demais são inteiras)
+                    const casas = { 'IDH': 3, 'PIB (Bilhões de Dolares)': 1 }[coluna] ?? 0;
+                    return valor.toLocaleString('pt-BR', {
+                        minimumFractionDigits: casas, maximumFractionDigits: casas
+                    });
                 }
             }
         };
@@ -530,6 +557,13 @@
                     } catch (error) {
                         console.error('❌ Erro:', error);
                         alert('Erro ao carregar dados. Veja o console.');
+                    }
+                },
+                // Painel de dados sempre do tamanho da tabela (coluna atual)
+                ajustarPainelDados(largura) {
+                    this.panelWidths[0] = Math.max(200, largura);
+                    if (window.resizeBlockly) {
+                        this.$nextTick(() => window.resizeBlockly());
                     }
                 },
                 startResize(panelIndex, event) {

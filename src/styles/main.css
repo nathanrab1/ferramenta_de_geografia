@@ -78,8 +78,8 @@ body {
 }
 
 .coluna-seletor select {
-    flex: 1;
-    min-width: 120px;
+    /* Largura definida pelo maior nome de coluna, não pelo painel */
+    width: auto;
     padding: 6px 10px;
     font-size: 14px;
     font-weight: 600;
@@ -96,7 +96,6 @@ body {
 }
 
 .dados-table {
-    width: 100%;
     border-collapse: collapse;
     font-size: 12px;
     background-color: white;
@@ -119,23 +118,20 @@ body {
     font-weight: 500;
 }
 
-/* Otimizar largura das colunas */
-.dados-table th:first-child,
-.dados-table td:first-child {
-    width: 1%;
+/* Colunas ajustadas ao maior valor: a tabela ocupa só o espaço
+   necessário e não estica junto com o painel */
+.dados-table {
+    width: auto;
+}
+
+.dados-table th,
+.dados-table td {
     white-space: nowrap;
 }
 
-.dados-table th:not(:first-child),
-.dados-table td:not(:first-child) {
-    width: auto;
-    max-width: 150px;
-}
-
-/* Fazer a tabela ocupar apenas o espaço necessário */
-.dados-table {
-    width: auto;
-    min-width: 100%;
+/* Valores numéricos alinhados à direita (casas decimais alinhadas) */
+.dados-table .numerico {
+    text-align: right;
 }
 
 .dados-table tbody tr:nth-child(even) {

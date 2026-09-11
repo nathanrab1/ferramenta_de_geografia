@@ -221,6 +221,31 @@ export default {
                 return opcoes.length ? opcoes : [['(sem dados)', '']];
             };
 
+            // Campo numérico em formato brasileiro: mostra e aceita vírgula
+            // como separador decimal (ponto também é aceito ao digitar).
+            // O valor guardado continua sendo um número JS normal.
+            class FieldNumeroBR extends Blockly.FieldNumber {
+                doClassValidation_(novoValor) {
+                    if (typeof novoValor === 'string') {
+                        novoValor = novoValor.replace(',', '.');
+                    }
+                    return super.doClassValidation_(novoValor);
+                }
+                // Texto exibido no bloco
+                getText_() {
+                    return this.formatarBR(this.getValue());
+                }
+                // Texto mostrado na caixa de edição
+                getEditorText_(valor) {
+                    return this.formatarBR(valor);
+                }
+                formatarBR(valor) {
+                    return valor === null || valor === undefined
+                        ? '' : String(valor).replace('.', ',');
+                }
+            }
+            Blockly.fieldRegistry.register('field_numero_br', FieldNumeroBR);
+
             // Bloco "se [coluna] > [valor]"
             Blockly.Blocks['se_maior'] = {
                 init: function() {
@@ -228,7 +253,7 @@ export default {
                         .appendField("se")
                         .appendField(new Blockly.FieldDropdown(opcoesNumericas()), "COLUNA")
                         .appendField(">")
-                        .appendField(new Blockly.FieldNumber(0), "VALOR");
+                        .appendField(new FieldNumeroBR(0), "VALOR");
                     this.appendStatementInput("DO")
                         .appendField("então");
                     this.setPreviousStatement(true, null);
@@ -245,7 +270,7 @@ export default {
                         .appendField("se")
                         .appendField(new Blockly.FieldDropdown(opcoesNumericas()), "COLUNA")
                         .appendField("<")
-                        .appendField(new Blockly.FieldNumber(0), "VALOR");
+                        .appendField(new FieldNumeroBR(0), "VALOR");
                     this.appendStatementInput("DO")
                         .appendField("então");
                     this.setPreviousStatement(true, null);
@@ -262,9 +287,9 @@ export default {
                         .appendField("se")
                         .appendField(new Blockly.FieldDropdown(opcoesNumericas()), "COLUNA")
                         .appendField("entre")
-                        .appendField(new Blockly.FieldNumber(0), "VALOR1")
+                        .appendField(new FieldNumeroBR(0), "VALOR1")
                         .appendField("e")
-                        .appendField(new Blockly.FieldNumber(0), "VALOR2");
+                        .appendField(new FieldNumeroBR(0), "VALOR2");
                     this.appendStatementInput("DO")
                         .appendField("então");
                     this.setPreviousStatement(true, null);
