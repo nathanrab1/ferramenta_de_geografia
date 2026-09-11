@@ -163,14 +163,17 @@ body {
     position: relative;
 }
 
-/* Botoes sobre o mapa (canto superior esquerdo) */
+/* Rodape do painel do mapa: botoes e slider de velocidade, abaixo do mapa */
 .mapa-botoes {
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    width: 100%;
+    flex-shrink: 0;
     display: flex;
+    align-items: center;
+    flex-wrap: wrap;
     gap: 10px;
-    z-index: 1000;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border-medium);
+    background-color: #fff;
 }
 
 .execute-btn,
@@ -213,6 +216,7 @@ body {
     align-items: center;
     gap: 6px;
     padding: 0 15px;
+    margin-left: auto;
     background-color: #fff;
     border-radius: 5px;
     box-shadow: 0 4px 6px var(--shadow-light);
@@ -233,6 +237,17 @@ body {
     /* fundo branco fixo: cor fixa (veja .mapa-legenda) */
     color: var(--color-neutral-black);
     text-align: right;
+}
+
+/* Area do mapa: referencia (position: relative) para o tooltip e a legenda,
+   que ficam sobre o mapa e nao sobre o rodape de botoes. */
+.mapa-area {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Legenda sobre o mapa (canto inferior esquerdo), montada ao executar.
@@ -333,8 +348,6 @@ body {
     flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
-    /* referencia para .mapa-botoes (position: absolute) */
-    position: relative;
 }
 
 .mapa-container {
@@ -394,9 +407,12 @@ body {
     pointer-events: none;
 }
 
+/* Destaque do pais sob o mouse. Usamos brightness em vez de opacity: com
+   opacidade o pais fica translucido e o poligono #grandes-lagos (que fica
+   atras dele) aparecia como um retangulo azul. */
 .mapa-svg path:hover,
 .mapa-svg g:hover {
-    opacity: 0.8;
+    filter: brightness(1.12);
     cursor: pointer;
 }
 

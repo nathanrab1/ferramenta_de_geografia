@@ -140,33 +140,35 @@
             },
             template: `
                 <div class="panel mapa-panel">
-                    <div
-                        class="mapa-container"
-                        @wheel.prevent="handleWheel"
-                        @dblclick="resetZoom"
-                        @mousedown="startPan"
-                        @mousemove="handleMouseMove"
-                        @mouseup="endPan"
-                        @mouseleave="handleMouseLeave"
-                        :style="{ cursor: isPanning ? 'grabbing' : 'grab' }"
-                    >
+                    <div class="mapa-area" ref="area">
                         <div
-                            v-html="svgContent"
-                            class="mapa-svg"
-                            :style="{ transform: 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')', transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.1s ease-out' }"
-                        ></div>
-                    </div>
-                    <div class="mapa-tooltip" v-if="tooltip" :class="{ 'a-esquerda': tooltip.aEsquerda }" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
-                        <div class="mapa-tooltip-nome">{{ tooltip.nome }}</div>
-                        <div class="mapa-tooltip-atributo" v-for="a in tooltip.atributos" :key="a.rotulo">
-                            <span class="mapa-tooltip-rotulo">{{ a.rotulo }}:</span> {{ a.valor }}
+                            class="mapa-container"
+                            @wheel.prevent="handleWheel"
+                            @dblclick="resetZoom"
+                            @mousedown="startPan"
+                            @mousemove="handleMouseMove"
+                            @mouseup="endPan"
+                            @mouseleave="handleMouseLeave"
+                            :style="{ cursor: isPanning ? 'grabbing' : 'grab' }"
+                        >
+                            <div
+                                v-html="svgContent"
+                                class="mapa-svg"
+                                :style="{ transform: 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')', transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.1s ease-out' }"
+                            ></div>
                         </div>
-                    </div>
-                    <div class="mapa-legenda" v-if="legenda.length">
-                        <div class="mapa-legenda-titulo">Legenda</div>
-                        <div class="mapa-legenda-item" v-for="item in legenda" :key="item.cor + item.rotulo" :title="item.detalhe || item.rotulo">
-                            <span class="mapa-legenda-cor" :style="{ backgroundColor: item.cor }"></span>
-                            <span class="mapa-legenda-rotulo">{{ item.rotulo }}</span>
+                        <div class="mapa-tooltip" v-if="tooltip" :class="{ 'a-esquerda': tooltip.aEsquerda }" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
+                            <div class="mapa-tooltip-nome">{{ tooltip.nome }}</div>
+                            <div class="mapa-tooltip-atributo" v-for="a in tooltip.atributos" :key="a.rotulo">
+                                <span class="mapa-tooltip-rotulo">{{ a.rotulo }}:</span> {{ a.valor }}
+                            </div>
+                        </div>
+                        <div class="mapa-legenda" v-if="legenda.length">
+                            <div class="mapa-legenda-titulo">Legenda</div>
+                            <div class="mapa-legenda-item" v-for="item in legenda" :key="item.cor + item.rotulo" :title="item.detalhe || item.rotulo">
+                                <span class="mapa-legenda-cor" :style="{ backgroundColor: item.cor }"></span>
+                                <span class="mapa-legenda-rotulo">{{ item.rotulo }}</span>
+                            </div>
                         </div>
                     </div>
                     <div class="mapa-botoes">
@@ -380,7 +382,8 @@
                     const pais = this.paisSobMouse(event.target);
                     if (!pais) { this.tooltip = null; return; }
 
-                    const caixa = this.$el.getBoundingClientRect();
+                    // o tooltip e posicionado dentro de .mapa-area (nao do painel)
+                    const caixa = this.$refs.area.getBoundingClientRect();
                     this.tooltip = {
                         nome: pais['País'],
                         // na ordem das colunas dos dados, não dos blocos
