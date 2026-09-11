@@ -129,6 +129,26 @@ body {
     white-space: nowrap;
 }
 
+/* Cabeçalhos clicáveis: ordenam a tabela (e a ordem da pintura) */
+.dados-table th.ordenavel {
+    cursor: pointer;
+    user-select: none;
+}
+
+.dados-table th.ordenavel:hover {
+    background-color: var(--color-secondary-orange);
+}
+
+.dados-table th .seta {
+    display: inline-block;
+    font-size: 10px;
+    opacity: 0.4;
+}
+
+.dados-table th.ativa .seta {
+    opacity: 1;
+}
+
 /* Valores numéricos alinhados à direita (casas decimais alinhadas) */
 .dados-table .numerico {
     text-align: right;

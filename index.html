@@ -7,8 +7,8 @@
 
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
-    <link rel="stylesheet" href="src/styles/colors.css?v=7">
-    <link rel="stylesheet" href="src/styles/main.css?v=7">
+    <link rel="stylesheet" href="src/styles/colors.css?v=8">
+    <link rel="stylesheet" href="src/styles/main.css?v=8">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -21,9 +21,9 @@
 </head>
 <body>
     <div id="app">
-        <dados-panel v-if="!loading" :paises="paises" v-model:coluna="colunaSelecionada" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
+        <dados-panel v-if="!loading" :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(0, $event)"></div>
-        <blockly-panel v-if="!loading" :paises="paises" :coluna="colunaSelecionada" :style="{ width: panelWidths[1] + 'px' }"></blockly-panel>
+        <blockly-panel v-if="!loading" :paises="paisesOrdenados" :coluna="colunaSelecionada" :style="{ width: panelWidths[1] + 'px' }"></blockly-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(1, $event)"></div>
         <mapa-panel v-if="!loading" :paises="paises" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
         <div v-if="loading" style="padding: 20px; text-align: center;">
@@ -34,20 +34,27 @@
     <!-- Componentes e App -->
     <script type="module">
         import BlocklyPanel from './src/components/BlocklyPanel.js';
+        import { ORDENACAO_PADRAO, ordenarPaises } from './src/utils/ordenacao.js';
 
         const { createApp } = Vue;
 
         // Componente: DadosPanel
         const DadosPanel = {
             name: 'DadosPanel',
+            // paises: já na ordem escolhida (o App ordena).
             // coluna: a coluna exibida na tabela. Fica no App (v-model)
-            // porque também define qual workspace o BlocklyPanel mostra
-            props: ['paises', 'coluna'],
-            emits: ['largura', 'update:coluna'],
+            // porque também define qual workspace o BlocklyPanel mostra.
+            // ordenacao: {por: 'País' | 'valor', direcao: 'asc' | 'desc'},
+            // escolhida clicando nos cabeçalhos; também no App (v-model),
+            // que lembra uma ordenação por coluna
+            props: ['paises', 'coluna', 'ordenacao'],
+            emits: ['largura', 'update:coluna', 'update:ordenacao'],
             watch: {
-                // Ao trocar a coluna (ou carregar os dados), avisa o App a
-                // largura que a tabela precisa para o painel se ajustar
+                // Ao trocar a coluna ou a ordenação (ou carregar os dados),
+                // avisa o App a largura que a tabela precisa para o painel
+                // se ajustar
                 coluna: 'emitirLargura',
+                ordenacao: 'emitirLargura',
                 paises: 'emitirLargura'
             },
             mounted() {
@@ -80,8 +87,12 @@
                         <table class="dados-table" ref="tabela">
                             <thead>
                                 <tr>
-                                    <th>País</th>
-                                    <th :class="{ numerico: colunaNumerica }">{{ coluna }}</th>
+                                    <th class="ordenavel" :class="{ ativa: ordenacao.por === 'País' }" @click="ordenarPor('País')" title="Ordenar por nome do país">
+                                        País <span class="seta">{{ seta('País') }}</span>
+                                    </th>
+                                    <th class="ordenavel" :class="{ numerico: colunaNumerica, ativa: ordenacao.por === 'valor' }" @click="ordenarPor('valor')" title="Ordenar por esta coluna">
+                                        {{ coluna }} <span class="seta">{{ seta('valor') }}</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -95,6 +106,18 @@
                 </div>
             `,
             methods: {
+                // Clique no cabeçalho: se já ordena por ele, inverte a
+                // direção; senão passa a ordenar por ele, crescente
+                ordenarPor(por) {
+                    const direcao = this.ordenacao.por === por && this.ordenacao.direcao === 'asc'
+                        ? 'desc' : 'asc';
+                    this.$emit('update:ordenacao', { por, direcao });
+                },
+                // Seta do cabeçalho: ▲/▼ no ativo, ⇅ apagado nos demais
+                seta(por) {
+                    if (this.ordenacao.por !== por) return '⇅';
+                    return this.ordenacao.direcao === 'asc' ? '▲' : '▼';
+                },
                 emitirLargura() {
                     this.$nextTick(() => {
                         const tabela = this.$refs.tabela;
@@ -522,6 +545,10 @@
                     // próprio workspace no BlocklyPanel (uma regionalização
                     // por coluna)
                     colunaSelecionada: 'Região',
+                    // Ordenação da tabela, lembrada por coluna (faz parte da
+                    // regionalização daquela coluna, como o workspace).
+                    // Colunas ausentes usam ORDENACAO_PADRAO.
+                    ordenacoes: {},
                     panelWidths: [
                         300,  // Painel de dados mais estreito
                         window.innerWidth / 3
@@ -531,6 +558,21 @@
                     startX: 0,
                     startWidth: 0
                 };
+            },
+            computed: {
+                ordenacaoAtual: {
+                    get() {
+                        return this.ordenacoes[this.colunaSelecionada] || ORDENACAO_PADRAO;
+                    },
+                    set(ordenacao) {
+                        this.ordenacoes[this.colunaSelecionada] = ordenacao;
+                    }
+                },
+                // Países na ordem da tabela: é também a ordem em que o laço
+                // "para cada país" pinta o mapa
+                paisesOrdenados() {
+                    return ordenarPaises(this.paises, this.colunaSelecionada, this.ordenacaoAtual);
+                }
             },
             watch: {
                 // Ao trocar a coluna, o mapa mostrava a regionalização de

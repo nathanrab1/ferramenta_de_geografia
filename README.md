@@ -10,6 +10,8 @@ Aplicação web interativa para ensino de regionalização do continente america
 ├── 📂 src/
 │   ├── 📂 components/            # Componentes Vue
 │   │   └── BlocklyPanel.js      # Painel de programação visual
+│   ├── 📂 utils/
+│   │   └── ordenacao.js         # Ordenação dos países (tabela e laço)
 │   ├── 📂 assets/
 │   │   ├── 📂 data/             # Dados JSON
 │   │   │   ├── paises_data.json
@@ -54,6 +56,10 @@ Aplicação web interativa para ensino de regionalização do continente america
   "se coluna = valor" (colunas de texto) ou "se >", "se <", "se entre"
   (colunas numéricas). A coluna dos blocos "se" é fixa (a do workspace).
 - Bloco de iteração "para cada país" com animação de varredura e slider de velocidade
+- Tabela ordenável pelos cabeçalhos (nome do país ou valor da coluna,
+  crescente/decrescente; Região usa a ordem Norte, Central, Sul). A ordem da
+  tabela é a ordem em que o laço pinta o mapa, e cada coluna lembra a sua
+  ordenação.
 - Legenda automática e tooltip do mapa com os valores da coluna
 - Botão Parar / Resetar
 

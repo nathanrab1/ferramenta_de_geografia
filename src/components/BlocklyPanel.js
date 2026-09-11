@@ -1,7 +1,11 @@
+import { compararValores } from '../utils/ordenacao.js';
+
 const { markRaw } = Vue;
 
 export default {
     name: 'BlocklyPanel',
+    // paises: já na ordem da tabela; é a ordem em que o laço "para cada
+    // país" percorre (e pinta) os países.
     // coluna: a coluna da tabela selecionada no DadosPanel. Cada coluna tem
     // o seu próprio workspace (uma regionalização por coluna); ao trocar a
     // coluna o painel guarda os blocos da anterior e mostra os da nova.
@@ -35,6 +39,12 @@ export default {
     watch: {
         coluna(nova, anterior) {
             if (this.workspace) this.trocarWorkspace(nova, anterior);
+        },
+        // Reordenar a tabela muda a ordem da pintura, mas só a partir da
+        // próxima execução: o laço em andamento guarda a lista com que
+        // começou (veja iniciar_programa)
+        paises(lista) {
+            window.paises = lista;
         }
     },
     mounted() {
@@ -167,22 +177,12 @@ export default {
             const rotuloColuna = (coluna) => panel.rotuloColuna(coluna);
             const paises = this.paises;
 
-            // Colunas com ordem própria no dropdown (geográfica, não
-            // alfabética); as demais ficam em ordem alfabética
-            const ORDEM_VALORES = {
-                'Região': ['Norte', 'Central', 'Sul']
-            };
-            // Valores únicos de uma coluna de texto, para o dropdown do "se ="
-            const valoresUnicos = (coluna) => {
-                const ordem = ORDEM_VALORES[coluna];
-                const posicao = (v) => {
-                    const i = ordem ? ordem.indexOf(v) : -1;
-                    return i === -1 ? Infinity : i; // desconhecidos vão para o fim
-                };
-                return [...new Set(paises.map(p => p[coluna]))]
-                    .sort((a, b) => posicao(a) - posicao(b) || String(a).localeCompare(String(b)))
+            // Valores únicos de uma coluna de texto, para o dropdown do
+            // "se =", na ordem própria da coluna (ou alfabética)
+            const valoresUnicos = (coluna) =>
+                [...new Set(paises.map(p => p[coluna]))]
+                    .sort((a, b) => compararValores(coluna, a, b))
                     .map(v => [v, v]);
-            };
 
             // Bloco "se [coluna] = [valor]": executa os blocos internos só
             // quando o país atual do laço tem o valor escolhido na coluna
