@@ -53,35 +53,46 @@ body {
     bottom: 0;
 }
 
-.panel-header {
-    color: var(--text-primary);
-    margin-bottom: 15px;
-    padding: 20px;
-    padding-bottom: 10px;
-    border-bottom: 3px solid var(--accent-orange);
-    background-color: var(--bg-secondary);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
 /* Painel de Dados */
 .dados-panel {
-    background-color: #fff;
+    background-color: var(--color-neutral-white);
+    /* Fundo sempre branco: a cor do texto não pode seguir o modo escuro */
+    color: var(--color-neutral-black);
     padding: 20px;
     min-width: 200px;
 }
 
-.info-box {
-    background-color: var(--color-neutral-beige);
-    padding: 10px;
+/* Seletor da coluna exibida na tabela */
+.coluna-seletor {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-bottom: 15px;
-    border-radius: 5px;
-    font-size: 13px;
 }
 
-.info-box strong {
-    color: var(--accent-orange);
+.coluna-seletor label {
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--color-neutral-black);
+}
+
+.coluna-seletor select {
+    flex: 1;
+    min-width: 120px;
+    padding: 6px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 5px;
+    border: 2px solid var(--accent-orange);
+    background-color: var(--color-neutral-white);
+    color: var(--color-neutral-black);
+    cursor: pointer;
+}
+
+.coluna-seletor select:focus {
+    outline: 2px solid var(--color-secondary-orange);
+    outline-offset: 2px;
 }
 
 .dados-table {
@@ -146,25 +157,24 @@ body {
     flex-direction: column;
 }
 
-.blockly-header {
-    padding: 20px;
-    margin: 0;
-    background-color: var(--bg-dark);
-    color: var(--text-light);
-    flex-shrink: 0;
-}
-
 .blockly-workspace {
     flex: 1;
     width: 100%;
     position: relative;
 }
 
-.execute-btn {
+/* Botoes sobre o mapa (canto superior esquerdo) */
+.mapa-botoes {
     position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background-color: var(--accent-green);
+    top: 20px;
+    left: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.execute-btn,
+.reset-btn {
     color: var(--text-light);
     border: none;
     padding: 15px 30px;
@@ -173,14 +183,140 @@ body {
     border-radius: 5px;
     cursor: pointer;
     box-shadow: 0 4px 6px var(--shadow-light);
-    z-index: 1000;
     transition: all 0.3s ease;
+}
+
+.execute-btn:hover,
+.reset-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px var(--shadow-medium);
+}
+
+.execute-btn {
+    background-color: var(--accent-green);
 }
 
 .execute-btn:hover {
     background-color: var(--success);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px var(--shadow-medium);
+}
+
+.reset-btn {
+    background-color: #c0392b;
+}
+
+.reset-btn:hover {
+    background-color: #e74c3c;
+}
+
+.velocidade-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 15px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px var(--shadow-light);
+    font-size: 16px;
+    user-select: none;
+}
+
+.velocidade-ctrl input[type="range"] {
+    width: 120px;
+    accent-color: var(--accent-orange);
+    cursor: pointer;
+}
+
+.velocidade-valor {
+    min-width: 62px;
+    font-size: 13px;
+    font-weight: bold;
+    /* fundo branco fixo: cor fixa (veja .mapa-legenda) */
+    color: var(--color-neutral-black);
+    text-align: right;
+}
+
+/* Legenda sobre o mapa (canto inferior esquerdo), montada ao executar.
+   O fundo e fixo (branco), entao o texto tambem usa uma cor fixa escura:
+   --text-primary vira cinza claro no modo escuro e sumiria sobre o branco. */
+.mapa-legenda {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 1000;
+    background-color: #fff;
+    color: var(--color-neutral-black);
+    border: 1px solid var(--border-medium);
+    border-radius: 5px;
+    box-shadow: 0 4px 8px var(--shadow-medium);
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 45%;
+    overflow-y: auto;
+    user-select: none;
+}
+
+.mapa-legenda-titulo {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--color-neutral-black);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.mapa-legenda-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--color-neutral-black);
+}
+
+.mapa-legenda-cor {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid var(--color-neutral-dark);
+    flex-shrink: 0;
+}
+
+/* Tooltip do pais sob o mouse (nome + atributos usados na visualizacao).
+   Fundo escuro fixo, cores fixas. pointer-events: none para nao roubar o
+   hover do pais nem atrapalhar o pan. */
+.mapa-tooltip {
+    position: absolute;
+    z-index: 1100;
+    pointer-events: none;
+    background-color: rgba(44, 44, 44, 0.95);
+    color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px var(--shadow-dark);
+    padding: 8px 12px;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: nowrap;
+    /* deslocado do cursor; .a-esquerda espelha para o outro lado */
+    transform: translate(14px, 14px);
+}
+
+.mapa-tooltip.a-esquerda {
+    transform: translate(calc(-100% - 14px), 14px);
+}
+
+.mapa-tooltip-nome {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.mapa-tooltip-nome + .mapa-tooltip-atributo {
+    margin-top: 4px;
+}
+
+.mapa-tooltip-rotulo {
+    color: var(--color-neutral-gray);
 }
 
 /* Painel Mapa */
@@ -197,6 +333,8 @@ body {
     flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
+    /* referencia para .mapa-botoes (position: absolute) */
+    position: relative;
 }
 
 .mapa-container {
@@ -236,6 +374,24 @@ body {
     transition: fill 0.3s ease;
     stroke: #ffffff;
     stroke-width: 1;
+}
+
+/* Reset do mapa: volta ao cinza sem fade (veja resetarMapa) */
+.mapa-svg.sem-transicao path,
+.mapa-svg.sem-transicao g {
+    transition: none;
+}
+
+/* Agua: o grupo #lakes do SVG (lagos do norte do Canada) vem no mesmo cinza
+   dos paises, e #grandes-lagos e o poligono inserido pelo MapaPanel atras dos
+   buracos dos Grandes Lagos. !important vence o style inline de cada path;
+   pointer-events: none evita o hover de "pais clicavel" sobre a agua. */
+.mapa-svg #lakes,
+.mapa-svg #lakes path,
+.mapa-svg #grandes-lagos {
+    fill: #a8d4f0 !important;
+    stroke: none;
+    pointer-events: none;
 }
 
 .mapa-svg path:hover,

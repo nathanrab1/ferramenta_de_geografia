@@ -6,8 +6,9 @@
     <title>Ferramenta de Regionalização - CLIC Geografia</title>
 
     <!-- CSS -->
-    <link rel="stylesheet" href="src/styles/colors.css">
-    <link rel="stylesheet" href="src/styles/main.css">
+    <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
+    <link rel="stylesheet" href="src/styles/colors.css?v=6">
+    <link rel="stylesheet" href="src/styles/main.css?v=6">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -24,15 +25,17 @@
         <div v-if="!loading" class="resizer" @mousedown="startResize(0, $event)"></div>
         <blockly-panel v-if="!loading" :paises="paises" :style="{ width: panelWidths[1] + 'px' }"></blockly-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(1, $event)"></div>
-        <mapa-panel v-if="!loading" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
+        <mapa-panel v-if="!loading" :paises="paises" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
         <div v-if="loading" style="padding: 20px; text-align: center;">
             <h2>⏳ Carregando...</h2>
         </div>
     </div>
 
     <!-- Componentes e App -->
-    <script>
-        const { createApp, markRaw } = Vue;
+    <script type="module">
+        import BlocklyPanel from './src/components/BlocklyPanel.js';
+
+        const { createApp } = Vue;
 
         // Componente: DadosPanel
         const DadosPanel = {
@@ -45,13 +48,9 @@
             },
             template: `
                 <div class="panel dados-panel">
-                    <h2 class="panel-header">📊 Dados dos Países</h2>
-                    <div class="info-box">
-                        <strong>Total de países:</strong> {{ paises.length }}
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label for="coluna-select" style="margin-right: 10px; font-weight: bold;">Visualizar coluna:</label>
-                        <select id="coluna-select" v-model="colunaSelecionada" style="padding: 5px 10px; border-radius: 5px; border: 2px solid var(--color-primary); background-color: var(--color-bg); color: var(--color-text);">
+                    <div class="coluna-seletor">
+                        <label for="coluna-select">Visualizar coluna:</label>
+                        <select id="coluna-select" v-model="colunaSelecionada">
                             <option value="regiao">Região</option>
                             <option value="idioma">Idioma</option>
                             <option value="esporte">Esporte</option>
@@ -95,181 +94,13 @@
             }
         };
 
-        // Componente: BlocklyPanel
-        const BlocklyPanel = {
-            name: 'BlocklyPanel',
-            props: ['paises'],
-            data() {
-                return {
-                    // markRaw ao atribuir: o workspace do Blockly NAO pode virar
-                    // um Proxy reativo do Vue (veja criarWorkspace)
-                    workspace: null
-                };
-            },
-            template: `
-                <div class="panel blockly-panel">
-                    <h2 class="blockly-header">🧩 Programação Visual</h2>
-                    <div id="blocklyDiv" class="blockly-workspace"></div>
-                    <button class="execute-btn" @click="executarCodigo">▶️ Executar</button>
-                </div>
-            `,
-            mounted() {
-                setTimeout(() => {
-                    this.inicializarBlockly();
-                }, 500);
-
-                // Expor método de resize globalmente
-                window.resizeBlockly = () => {
-                    if (this.workspace) {
-                        Blockly.svgResize(this.workspace);
-                    }
-                };
-            },
-            methods: {
-                inicializarBlockly() {
-                    const paises = this.paises;
-
-                    // Limpar definições anteriores se existirem
-                    delete Blockly.Blocks['iniciar_programa'];
-                    delete Blockly.Blocks['pintar_pais'];
-                    if (Blockly.JavaScript) {
-                        delete Blockly.JavaScript['iniciar_programa'];
-                        delete Blockly.JavaScript['pintar_pais'];
-                    }
-
-                    // Definir bloco de início do programa
-                    Blockly.Blocks['iniciar_programa'] = {
-                        init: function() {
-                            this.appendDummyInput()
-                                .appendField("▶️ Quando executar");
-                            this.setNextStatement(true, null);
-                            this.setColour(120);
-                            this.setTooltip("Bloco inicial do programa");
-                            this.setDeletable(false); // Não pode ser deletado
-                        }
-                    };
-
-                    // Gerador de código para bloco inicial (não gera código, apenas marca início)
-                    Blockly.JavaScript['iniciar_programa'] = function(block) {
-                        return ''; // Bloco inicial não gera código próprio
-                    };
-
-                    // Definir bloco customizado para pintar país
-                    Blockly.Blocks['pintar_pais'] = {
-                        init: function() {
-                            this.appendDummyInput()
-                                .appendField("Pintar");
-                            this.appendDummyInput()
-                                .appendField(new Blockly.FieldDropdown(
-                                    paises.map(p => [p['País'], p['País']])
-                                ), "PAIS");
-                            this.appendDummyInput()
-                                .appendField(new Blockly.FieldDropdown([
-                                    ["🔴 Vermelho", "#ff0000"],
-                                    ["🔵 Azul", "#0000ff"],
-                                    ["🟢 Verde", "#00ff00"],
-                                    ["🟡 Amarelo", "#ffff00"],
-                                    ["🟠 Laranja", "#ff8800"],
-                                    ["🟣 Roxo", "#8800ff"],
-                                    ["🟤 Marrom", "#8b4513"],
-                                    ["⚫ Preto", "#000000"],
-                                    ["⚪ Branco", "#ffffff"],
-                                    ["🩷 Rosa", "#ff69b4"]
-                                ]), "COR");
-                            this.setInputsInline(false);
-                            this.setPreviousStatement(true, null);
-                            this.setNextStatement(true, null);
-                            this.setColour(160);
-                            this.setTooltip("Pinta um país com a cor escolhida");
-                        }
-                    };
-
-                    // Definir gerador de código
-                    Blockly.JavaScript['pintar_pais'] = function(block) {
-                        const pais = block.getFieldValue('PAIS');
-                        const cor = block.getFieldValue('COR');
-                        return `window.pintarPais('${pais}', '${cor}');\n`;
-                    };
-
-                    // Criar workspace
-                    this.criarWorkspace();
-                },
-                criarWorkspace() {
-                    // Criar workspace
-                    // markRaw: sem isso o Vue envolve o workspace em um Proxy reativo.
-                    // Os blocos criados atraves do Proxy ficam com block.workspace !== workspace
-                    // interno do Blockly, e a verificacao de conexao falha com
-                    // "Blocks not on same workspace" (blocos nao encaixam).
-                    this.workspace = markRaw(Blockly.inject('blocklyDiv', {
-                        toolbox: `
-                            <xml>
-                                <block type="pintar_pais"></block>
-                            </xml>
-                        `,
-                        zoom: {
-                            controls: true,
-                            wheel: true,
-                            startScale: 1.0,
-                            maxScale: 3,
-                            minScale: 0.3,
-                            scaleSpeed: 1.2
-                        },
-                        trashcan: true,
-                        scrollbars: true,
-                        move: {
-                            scrollbars: {
-                                horizontal: true,
-                                vertical: true
-                            },
-                            drag: true,
-                            wheel: true
-                        },
-                        grid: {
-                            spacing: 20,
-                            length: 3,
-                            colour: '#ccc',
-                            snap: true
-                        }
-                    }));
-
-                    // Adicionar bloco inicial "Quando executar" no workspace
-                    const blocosIniciais = `
-                        <xml xmlns="https://developers.google.com/blockly/xml">
-                            <block type="iniciar_programa" x="20" y="20"></block>
-                        </xml>
-                    `;
-                    Blockly.Xml.domToWorkspace(Blockly.utils.xml.textToDom(blocosIniciais), this.workspace);
-
-                    // Forçar resize do workspace
-                    Blockly.svgResize(this.workspace);
-
-                    console.log('✅ Workspace pronto com bloco inicial!');
-                },
-                executarCodigo() {
-                    try {
-                        if (!Blockly.JavaScript) {
-                            throw new Error('Gerador JavaScript do Blockly não está disponível');
-                        }
-                        const code = Blockly.JavaScript.workspaceToCode(this.workspace);
-                        console.log('📝 Código:', code);
-                        if (code.trim()) {
-                            eval(code);
-                            console.log('✅ Executado!');
-                        } else {
-                            console.log('⚠️ Nenhum código para executar');
-                        }
-                    } catch (error) {
-                        console.error('❌ Erro:', error);
-                        alert('Erro ao executar: ' + error.message);
-                    }
-                }
-            }
-        };
+        // Cinza original dos paises no america_map.svg (fill:#787878)
+        const COR_PADRAO_PAIS = '#787878';
 
         // Componente: MapaPanel
         const MapaPanel = {
             name: 'MapaPanel',
-            props: ['paisesIsoMapping'],
+            props: ['paises', 'paisesIsoMapping'],
             data() {
                 return {
                     svgContent: '',
@@ -279,8 +110,33 @@
                     translateY: 0,
                     isPanning: false,
                     startPanX: 0,
-                    startPanY: 0
+                    startPanY: 0,
+                    // Velocidade da pintura (1 = lento ... 10 = rápido)
+                    velocidade: 9,
+                    // Itens {cor, nomeCor, rotulo, detalhe} montados pelo
+                    // BlocklyPanel a partir dos blocos, ao executar
+                    legenda: [],
+                    // Colunas usadas nos blocos "se" da última execução;
+                    // aparecem no tooltip de cada país
+                    colunasVisualizadas: [],
+                    // Tooltip do país sob o mouse: { nome, atributos: [{rotulo, valor}], x, y }
+                    tooltip: null
                 };
+            },
+            computed: {
+                // Código ISO (id no SVG) -> registro do país, para o tooltip
+                paisPorISO() {
+                    const porNome = Object.fromEntries((this.paises || []).map(p => [p['País'], p]));
+                    const mapa = {};
+                    for (const [nome, iso] of Object.entries(this.paisesIsoMapping || {})) {
+                        mapa[iso] = porNome[nome] || { 'País': nome };
+                    }
+                    return mapa;
+                },
+                // Pausa entre países em ms: 1000ms (lento) ... 100ms (rápido)
+                intervaloMs() {
+                    return (11 - this.velocidade) * 100;
+                }
             },
             template: `
                 <div class="panel mapa-panel">
@@ -289,9 +145,9 @@
                         @wheel.prevent="handleWheel"
                         @dblclick="resetZoom"
                         @mousedown="startPan"
-                        @mousemove="handlePan"
+                        @mousemove="handleMouseMove"
                         @mouseup="endPan"
-                        @mouseleave="endPan"
+                        @mouseleave="handleMouseLeave"
                         :style="{ cursor: isPanning ? 'grabbing' : 'grab' }"
                     >
                         <div
@@ -300,13 +156,45 @@
                             :style="{ transform: 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')', transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.1s ease-out' }"
                         ></div>
                     </div>
+                    <div class="mapa-tooltip" v-if="tooltip" :class="{ 'a-esquerda': tooltip.aEsquerda }" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
+                        <div class="mapa-tooltip-nome">{{ tooltip.nome }}</div>
+                        <div class="mapa-tooltip-atributo" v-for="a in tooltip.atributos" :key="a.rotulo">
+                            <span class="mapa-tooltip-rotulo">{{ a.rotulo }}:</span> {{ a.valor }}
+                        </div>
+                    </div>
+                    <div class="mapa-legenda" v-if="legenda.length">
+                        <div class="mapa-legenda-titulo">Legenda</div>
+                        <div class="mapa-legenda-item" v-for="item in legenda" :key="item.cor + item.rotulo" :title="item.detalhe || item.rotulo">
+                            <span class="mapa-legenda-cor" :style="{ backgroundColor: item.cor }"></span>
+                            <span class="mapa-legenda-rotulo">{{ item.rotulo }}</span>
+                        </div>
+                    </div>
+                    <div class="mapa-botoes">
+                        <button class="execute-btn" @click="executar">▶️ Executar</button>
+                        <button class="reset-btn" @click="resetarMapa" title="Para a execução e limpa o mapa">⏹️ Parar / Resetar</button>
+                        <label class="velocidade-ctrl" title="Velocidade da pintura">
+                            <span>🐢</span>
+                            <input type="range" min="1" max="10" step="1" v-model.number="velocidade">
+                            <span>🐇</span>
+                            <span class="velocidade-valor">{{ intervaloMs }} ms</span>
+                        </label>
+                    </div>
                 </div>
             `,
             async mounted() {
                 await this.carregarMapa();
                 window.pintarPais = this.pintarPais;
+                window.intervaloPintura = this.intervaloMs;
+                window.atualizarLegenda = (itens, colunas = []) => {
+                    this.legenda = itens;
+                    this.colunasVisualizadas = colunas;
+                };
             },
             watch: {
+                // O laço gerado pelo BlocklyPanel lê esse valor a cada país
+                intervaloMs(valor) {
+                    window.intervaloPintura = valor;
+                },
                 // O mapeamento chega depois do mounted (fetch no componente raiz),
                 // entao refazemos o recorte quando ele finalmente carrega.
                 paisesIsoMapping() {
@@ -314,12 +202,21 @@
                 }
             },
             methods: {
+                executar() {
+                    // O código é gerado e executado pelo BlocklyPanel
+                    if (window.executarCodigo) {
+                        window.executarCodigo();
+                    } else {
+                        console.warn('⚠️ Blockly ainda não está pronto');
+                    }
+                },
                 async carregarMapa() {
                     try {
                         const response = await fetch('src/assets/svg/america_map.svg');
                         this.svgContent = await response.text();
                         await this.$nextTick();
                         this.ocultarNaoAmericanos();
+                        this.adicionarAguaGrandesLagos();
                         this.ajustarViewBox();
                         console.log('✅ Mapa carregado');
                     } catch (error) {
@@ -345,6 +242,20 @@
                         const elemento = svg.querySelector(`#${codigoISO}`);
                         if (elemento) elemento.remove();
                     }
+                },
+                // Os Grandes Lagos nao sao elementos do SVG: sao buracos recortados
+                // nos caminhos dos EUA/Canada, entao mostram o fundo da pagina.
+                // Colocamos um poligono azul ATRAS de tudo, so na regiao dos lagos
+                // (coordenadas do viewBox original), para os buracos ficarem azuis.
+                // O canto inferior direito e chanfrado para nao vazar no Atlantico.
+                adicionarAguaGrandesLagos() {
+                    const svg = this.$el.querySelector('svg');
+                    if (!svg || svg.querySelector('#grandes-lagos')) return;
+
+                    const poligono = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                    poligono.setAttribute('id', 'grandes-lagos');
+                    poligono.setAttribute('points', '1436,-18 1668,-18 1668,115 1640,134 1436,134');
+                    svg.insertBefore(poligono, svg.firstChild);
                 },
                 // O viewBox do arquivo (2752x1537) e bem maior que o desenho das
                 // Americas, o que deixava muita area vazia em volta. Aqui medimos
@@ -447,6 +358,78 @@
                 },
                 endPan() {
                     this.isPanning = false;
+                },
+                handleMouseMove(event) {
+                    this.handlePan(event);
+                    this.atualizarTooltip(event);
+                },
+                handleMouseLeave() {
+                    this.endPan();
+                    this.tooltip = null;
+                },
+                // Sobe do elemento sob o mouse até achar um id que seja código
+                // ISO de país (os países do SVG têm sub-paths sem id útil)
+                paisSobMouse(alvo) {
+                    for (let el = alvo; el && el !== this.$el; el = el.parentElement) {
+                        if (el.id && this.paisPorISO[el.id]) return this.paisPorISO[el.id];
+                    }
+                    return null;
+                },
+                atualizarTooltip(event) {
+                    if (this.isPanning) { this.tooltip = null; return; }
+                    const pais = this.paisSobMouse(event.target);
+                    if (!pais) { this.tooltip = null; return; }
+
+                    const caixa = this.$el.getBoundingClientRect();
+                    this.tooltip = {
+                        nome: pais['País'],
+                        // na ordem das colunas dos dados, não dos blocos
+                        atributos: Object.keys(pais)
+                            .filter(c => this.colunasVisualizadas.includes(c))
+                            .map(c => ({ rotulo: c, valor: pais[c] })),
+                        x: event.clientX - caixa.left,
+                        y: event.clientY - caixa.top,
+                        // Na metade direita do painel o tooltip abre para a
+                        // esquerda do cursor, senão seria cortado pela borda
+                        aEsquerda: event.clientX - caixa.left > caixa.width / 2
+                    };
+                },
+                resetarMapa() {
+                    // Para o laço em andamento, senão ele continuaria
+                    // pintando por cima do mapa recém-limpo
+                    if (window.pararExecucao) window.pararExecucao();
+                    this.legenda = [];
+                    this.colunasVisualizadas = [];
+
+                    // Devolve a cor cinza original do SVG a todos os paises mapeados
+                    const svg = this.$el.querySelector('svg');
+                    if (!svg) return;
+
+                    // Ao pintar, a cor faz um fade (transition de fill no CSS);
+                    // no reset a volta ao cinza deve ser imediata. A classe
+                    // desliga a transition e o getBoundingClientRect força o
+                    // navegador a aplicar isso antes das mudanças de fill;
+                    // sem ele, a classe e o fill cairiam no mesmo repaint e
+                    // o fade aconteceria mesmo assim.
+                    const mapa = svg.parentElement;
+                    mapa.classList.add('sem-transicao');
+                    svg.getBoundingClientRect();
+
+                    for (const codigoISO of Object.values(this.paisesIsoMapping || {})) {
+                        const elemento = svg.querySelector(`#${codigoISO}`);
+                        if (!elemento) continue;
+
+                        const alvos = [elemento, ...elemento.querySelectorAll('path, polygon, circle, rect, ellipse')];
+                        alvos.forEach(el => {
+                            el.style.fill = COR_PADRAO_PAIS;
+                            el.setAttribute('fill', COR_PADRAO_PAIS);
+                        });
+                    }
+
+                    // Reativa o fade só depois do repaint com o cinza
+                    svg.getBoundingClientRect();
+                    mapa.classList.remove('sem-transicao');
+                    console.log('🔄 Mapa resetado');
                 },
                 pintarPais(nomePais, cor) {
                     console.log(`🎨 Tentando pintar: ${nomePais} de ${cor}`);

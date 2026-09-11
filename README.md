@@ -6,13 +6,10 @@ Aplicação web interativa para ensino de regionalização do continente america
 
 ```
 📦 ferramente-de-geografia/
-├── 📄 index.html                 # Página principal
+├── 📄 index.html                 # Página principal (app Vue, painéis de dados e mapa)
 ├── 📂 src/
-│   ├── 📄 app.js                 # Aplicação Vue principal
 │   ├── 📂 components/            # Componentes Vue
-│   │   ├── DadosPanel.js        # Painel de dados dos países
-│   │   ├── BlocklyPanel.js      # Painel de programação visual
-│   │   └── MapaPanel.js         # Painel do mapa SVG
+│   │   └── BlocklyPanel.js      # Painel de programação visual
 │   ├── 📂 assets/
 │   │   ├── 📂 data/             # Dados JSON
 │   │   │   ├── paises_data.json
@@ -20,6 +17,7 @@ Aplicação web interativa para ensino de regionalização do continente america
 │   │   └── 📂 svg/              # Imagens SVG
 │   │       └── america_map.svg
 │   └── 📂 styles/
+│       ├── colors.css           # Paleta de cores (variáveis CSS)
 │       └── main.css             # Estilos globais
 └── 📂 [CLIC]/                   # Materiais pedagógicos (PDFs)
 ```
