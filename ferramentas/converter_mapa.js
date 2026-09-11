@@ -12,10 +12,18 @@
 //   desnomear    ids que não são o país que dizem ser (viram caminho sem nome)
 //   agrupar      { iso: [ids...] } — partes separadas do mesmo país
 //   correcoes    { idBruto: iso } — ilha atribuída a outro país que o mais próximo
-//   micro        { iso: [x, y] } — países sem forma, desenhados como círculos
+//   micro        { iso: [x, y] } — países sem forma (ou só pontinhos),
+//                desenhados como círculos; pontinhos perto do círculo são
+//                atribuídos ao país como ilhas
+//   raioMicro    raio desses círculos (padrão 1.8, nas unidades do viewBox)
+//   desagrupar   ids de grupos a desfazer (as partes sobem, mantendo posição)
+//   limparIds    (padrão false) remove todo id que não seja de país
+//   tracoFino    ids cujos caminhos internos ganham traço mais fino (divisas
+//                internas, como os estados da Austrália)
 //   lagos        ids de lagos (quando não estão dentro de um país, ex.: Cáspio)
 //   remover      ids a apagar (ex.: cópias pretas dos lagos por baixo deles)
-//   neutros      ids que ficam cinza sem país (áreas disputadas)
+//   neutros      ids que ficam cinza sem país (áreas disputadas); um id de
+//                grupo neutraliza todos os caminhos dentro dele
 //   distanciaMaxima  ilha mais longe que isso de qualquer país fica sem país
 //   irmaosDoGrupo    (padrão true) caminho sem nome no mesmo grupo de um país
 //                    é desse país — serve para os grupinhos do Inkscape
@@ -28,7 +36,9 @@ const log = (...a) => rel.push(a.join(' '));
 
 // ---- 1. limpeza de Inkscape/metadata ----
 for (const el of [...svg.children]) {
-  if (['namedview', 'sodipodi:namedview', 'metadata', 'defs', 'title', 'desc'].includes(el.localName)) el.remove();
+  // (style: folhas de estilo internas, como a do BlankMap da Wikimedia,
+  // venceriam os atributos fill/stroke que o app usa)
+  if (['namedview', 'sodipodi:namedview', 'metadata', 'defs', 'title', 'desc', 'style'].includes(el.localName)) el.remove();
 }
 for (const el of svg.querySelectorAll('*')) {
   for (const a of [...el.attributes]) {
@@ -51,6 +61,10 @@ for (const id of CONFIG.remover || []) {
 }
 const LAGOS_FIXOS = new Set(CONFIG.lagos || []);
 const NEUTROS = new Set(CONFIG.neutros || []);
+for (const id of CONFIG.neutros || []) {
+  const el = svg.querySelector('#' + CSS.escape(id));
+  if (el && el.tagName === 'g') for (const p of el.querySelectorAll('path')) NEUTROS.add(p.id);
+}
 for (const id of CONFIG.desnomear || []) {
   const el = svg.querySelector('#' + CSS.escape(id));
   if (el) el.id = 'path-' + id; else log('AVISO desnomear: não achei', id);
@@ -88,13 +102,21 @@ function mover(el, novoPai) { el.setAttribute('transform', matrizPara(el, novoPa
 const PAISES = CONFIG.paises;
 const AGRUPAR = CONFIG.agrupar || {};
 const MICRO = CONFIG.micro || {};
+// Microestados: círculos criados já aqui para entrarem na geometria (os
+// pontinhos de ilhas em volta são atribuídos a eles por proximidade)
+const RAIO = CONFIG.raioMicro ?? 1.8;
+for (const [iso, [x, y]] of Object.entries(MICRO)) {
+  const c = document.createElementNS(NS, 'circle');
+  c.id = iso; c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', RAIO);
+  c.setAttribute('fill', '#787878'); c.setAttribute('stroke', '#ffffff'); c.setAttribute('stroke-width', RAIO / 4.5);
+  svg.appendChild(c);
+}
 const geometria = {};
 for (const iso of PAISES) {
-  if (MICRO[iso]) continue;
   const ids = AGRUPAR[iso] || [iso];
   const els = ids.map(id => svg.querySelector('#' + CSS.escape(id))).filter(Boolean);
   if (!els.length) { log('FALTA', iso); continue; }
-  geometria[iso] = els.flatMap(el => el.tagName === 'g' ? [...el.querySelectorAll('path')] : [el]);
+  geometria[iso] = els.flatMap(el => el.tagName === 'g' ? [...el.querySelectorAll('path, circle')] : [el]);
 }
 const amostrasPais = Object.fromEntries(Object.entries(geometria).map(([iso, els]) => [iso, els.flatMap(e => amostras(e))]));
 
@@ -111,12 +133,15 @@ const semPais = [];
 // Partes já atribuídas a um país em `agrupar` não passam pela classificação
 // (testariam como "dentro" de si mesmas e virariam lago)
 const PARTES = new Set(Object.values(AGRUPAR).flat());
+const ehPais = (el) => el && el !== svg && PAISES.includes(el.id);
 for (const el of [...svg.querySelectorAll('path')]) {
   if (!/^path/.test(el.id) || PARTES.has(el.id)) continue;
   if (LAGOS_FIXOS.has(el.id)) { lagos.push(el); log('lago (config)', el.id); continue; }
   if (NEUTROS.has(el.id)) { semPais.push(el); log('neutro', el.id); continue; }
-  const c = centroRaiz(el);
   if (CORRECOES[el.id]) { (ilhas[CORRECOES[el.id]] ||= []).push(el); log('correção', el.id, '->', CORRECOES[el.id]); continue; }
+  // Já está dentro do grupo de um país (ilhas do BlankMap): fica onde está
+  if ([...svg.querySelectorAll('g')].some(g => ehPais(g) && g.contains(el))) continue;
+  const c = centroRaiz(el);
   const irmao = (CONFIG.irmaosDoGrupo ?? true) ? paisDoGrupo(el) : null;
   if (irmao) { (ilhas[irmao] ||= []).push(el); log('grupo', el.id, '->', irmao); continue; }
   const dono = PAISES.find(iso => geometria[iso] && geometria[iso].some(g => dentroDe(g, c)));
@@ -151,8 +176,9 @@ for (const [iso, els] of Object.entries(ilhas)) {
   for (const el of els) { el.removeAttribute('id'); mover(el, g); }
 }
 // grupos de edição do Inkscape que sobraram: desfaz mantendo a posição
+const DESAGRUPAR = new Set(CONFIG.desagrupar || []);
 for (const g of [...svg.querySelectorAll('g')]) {
-  if (/^(g|layer)\d+$/.test(g.id)) {
+  if (!g.id || /^(g|layer)\d+$/.test(g.id) || DESAGRUPAR.has(g.id)) {
     if (g.children.length === 0) { g.remove(); continue; }
     for (const f of [...g.children]) mover(f, g.parentElement);
     g.remove();
@@ -174,15 +200,22 @@ for (const el of svg.querySelectorAll('path, circle, polygon, ellipse')) {
   el.setAttribute('stroke-width', sw || '0.3');
 }
 for (const g of svg.querySelectorAll('g')) { g.removeAttribute('style'); g.removeAttribute('opacity'); }
+// Divisas internas mais finas (inline vence o stroke-width do CSS do app)
+for (const id of CONFIG.tracoFino || []) {
+  const el = svg.querySelector('#' + CSS.escape(id));
+  if (el) for (const p of el.querySelectorAll('path')) p.setAttribute('style', 'stroke-width:calc(var(--traco, 1) * 0.35)');
+}
 // ids "path123" que sobraram ficam sem id
 for (const el of svg.querySelectorAll('[id^="path"]')) el.removeAttribute('id');
 
-// ---- 9. microestados: círculos clicáveis ----
-for (const [iso, [x, y]] of Object.entries(MICRO)) {
-  const c = document.createElementNS(NS, 'circle');
-  c.id = iso; c.setAttribute('cx', x); c.setAttribute('cy', y); c.setAttribute('r', '1.8');
-  c.setAttribute('fill', '#787878'); c.setAttribute('stroke', '#ffffff'); c.setAttribute('stroke-width', '0.4');
-  svg.insertBefore(c, gl);
+// ---- 9. círculos dos microestados por cima de tudo (menos dos lagos) ----
+for (const iso of Object.keys(MICRO)) {
+  const el = svg.querySelector('#' + CSS.escape(iso));
+  if (el) svg.insertBefore(el, gl);
+}
+if (CONFIG.limparIds) {
+  const manter = new Set([...PAISES, 'lakes', ...Object.values(CONFIG.renomear || {})]);
+  for (const el of svg.querySelectorAll('[id]')) if (!manter.has(el.id)) el.removeAttribute('id');
 }
 
 // ---- conferência final ----

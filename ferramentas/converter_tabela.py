@@ -8,7 +8,8 @@ Lê fontes/<id>/tabela.config.json:
       "iso": { "Nome do país": "código ISO", ... } }
 e grava src/assets/data/<id>_paises.json e src/assets/data/<id>_iso.json.
 Textos são aparados; "Indisponível"/"-"/vazio viram null; inteiros gravados
-como 357021.0 viram 357021; IDH fica com 3 casas.
+como 357021.0 viram 357021; IDH fica com 3 casas. Asteriscos no fim do nome
+do país (marca de "transcontinental" em algumas planilhas) são removidos.
 """
 import json, sys
 from pathlib import Path
@@ -37,6 +38,8 @@ def main():
                 continue
             if isinstance(valor, str):
                 valor = valor.strip()
+                if coluna == 'País':
+                    valor = valor.rstrip('*').strip()
                 if valor.lower() in AUSENTE:
                     valor = None
             elif isinstance(valor, float):

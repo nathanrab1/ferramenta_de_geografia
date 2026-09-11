@@ -1,6 +1,6 @@
 # 🗺️ Ferramenta de Regionalização - CLIC Geografia
 
-Aplicação web interativa para ensino de regionalização de continentes usando programação visual com Blockly. A tela inicial escolhe o continente (América, Europa ou Ásia).
+Aplicação web interativa para ensino de regionalização de continentes usando programação visual com Blockly. A tela inicial escolhe o continente (América, Europa, Ásia, África ou Oceania).
 
 ## 📁 Estrutura do Projeto
 
@@ -17,11 +17,15 @@ Aplicação web interativa para ensino de regionalização de continentes usando
 │   │   ├── 📂 data/             # Dados JSON, um par por continente
 │   │   │   ├── america_paises.json / america_iso.json
 │   │   │   ├── europa_paises.json / europa_iso.json
-│   │   │   └── asia_paises.json / asia_iso.json
+│   │   │   ├── asia_paises.json / asia_iso.json
+│   │   │   ├── africa_paises.json / africa_iso.json
+│   │   │   └── oceania_paises.json / oceania_iso.json
 │   │   └── 📂 svg/              # Mapas SVG, um por continente
 │   │       ├── america.svg
 │   │       ├── europa.svg
-│   │       └── asia.svg
+│   │       ├── asia.svg
+│   │       ├── africa.svg
+│   │       └── oceania.svg
 │   └── 📂 styles/
 │       ├── colors.css           # Paleta de cores (variáveis CSS)
 │       └── main.css             # Estilos globais
@@ -76,9 +80,11 @@ para conferência. As configurações da Europa e da Ásia servem de exemplo.
 ### ✅ Implementado
 - Tela inicial de escolha do continente (cartões; continentes ainda sem dados aparecem "em breve")
 - Interface com 3 painéis (Dados, Blockly, Mapa); botão com o nome do continente volta à tela inicial
-- Tabela com 35 países da América, 50 da Europa e 50 da Ásia (cada continente com as suas colunas).
-  Países sem forma visível no mapa aparecem como pontos: Mônaco, San Marino e Vaticano na Europa;
-  Singapura e Timor-Leste na Ásia. Taiwan, a Caxemira e territórios fora da tabela ficam cinza.
+- Tabela com 35 países da América, 50 da Europa, 50 da Ásia, 54 da África e 14 da Oceania (cada
+  continente com as suas colunas). Países sem forma visível no mapa aparecem como pontos: Mônaco,
+  San Marino e Vaticano na Europa; Singapura e Timor-Leste na Ásia; os cinco insulares da África e
+  os dez insulares da Oceania têm um círculo. Taiwan, a Caxemira, o Saara Ocidental e territórios
+  fora da tabela ficam cinza.
 - **Um workspace por coluna da tabela**: o dropdown "Visualizar coluna" escolhe
   qual regionalização está sendo editada; os blocos de cada coluna ficam
   guardados (em memória) ao trocar de coluna, permitindo várias

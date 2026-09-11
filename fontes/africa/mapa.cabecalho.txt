@@ -1,0 +1,5 @@
+<!-- Mapa da África para a Ferramenta de Regionalização (CLIC).
+     Cada país é um elemento com id = código ISO 3166-1 alpha-2 em minúsculas
+     (grupos quando o país tem ilhas); os países insulares pequenos trazem um
+     círculo clicável em volta. O Saara Ocidental (eh) fica cinza, sem país.
+     Derivado de "BlankMap-Africa.svg" (Wikimedia Commons, domínio público). -->

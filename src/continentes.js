@@ -43,7 +43,7 @@ export const CONTINENTES = {
     europa: {
         id: 'europa',
         nome: 'Europa',
-        icone: '🌍',
+        icone: '🗺️',
         descricao: '50 países, da Islândia ao Cáucaso',
         disponivel: true,
         colunaInicial: 'Região geográfica',
@@ -68,6 +68,33 @@ export const CONTINENTES = {
         },
         // O SVG já vem recortado (asia.svg); Taiwan, a Caxemira e ilhas
         // remotas ficam cinza, sem país
+        ocultar: []
+    },
+    africa: {
+        id: 'africa',
+        nome: 'África',
+        icone: '🌍',
+        descricao: '54 países, do Magrebe ao Cabo',
+        disponivel: true,
+        colunaInicial: 'Região',
+        ordemValores: {
+            'Região': ['África Setentrional', 'África Ocidental', 'África Central', 'África Oriental', 'África Austral'],
+            'Norte ou Subsaariana': ['África Setentrional', 'África Subsaariana']
+        },
+        // O Saara Ocidental (eh) fica no mapa, cinza, sem país
+        ocultar: []
+    },
+    oceania: {
+        id: 'oceania',
+        nome: 'Oceania',
+        icone: '🏝️',
+        descricao: '14 países, da Austrália às ilhas do Pacífico',
+        disponivel: true,
+        colunaInicial: 'Região',
+        ordemValores: {
+            'Região': ['Australásia', 'Melanésia', 'Micronésia', 'Polinésia']
+        },
+        // Indonésia, Nova Caledônia e outros territórios ficam cinza, sem país
         ocultar: []
     }
 };

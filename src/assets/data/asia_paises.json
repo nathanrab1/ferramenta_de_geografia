@@ -26,7 +26,7 @@
     "População": 39332467
   },
   {
-    "País": "Armênia*",
+    "País": "Armênia",
     "Coordenada X": -158,
     "Coordenada Y": 37,
     "Região": "Ásia Ocidental",
@@ -39,7 +39,7 @@
     "População": 3021995
   },
   {
-    "País": "Azerbaijão*",
+    "País": "Azerbaijão",
     "Coordenada X": -146,
     "Coordenada Y": 37,
     "Região": "Ásia Ocidental",
@@ -156,7 +156,7 @@
     "População": 1479142139
   },
   {
-    "País": "Chipre*",
+    "País": "Chipre",
     "Coordenada X": -194,
     "Coordenada Y": 10,
     "Região": "Ásia Ocidental",
@@ -195,7 +195,7 @@
     "População": 52670847
   },
   {
-    "País": "Egito*",
+    "País": "Egito",
     "Coordenada X": -202,
     "Coordenada Y": -19,
     "Região": "Oriente Médio",
@@ -234,7 +234,7 @@
     "População": 118988398
   },
   {
-    "País": "Geórgia*",
+    "País": "Geórgia",
     "Coordenada X": -162,
     "Coordenada Y": 44,
     "Região": "Ásia Ocidental",
@@ -273,7 +273,7 @@
     "População": 1474301022
   },
   {
-    "País": "Indonésia*",
+    "País": "Indonésia",
     "Coordenada X": 112,
     "Coordenada Y": -139,
     "Região": "Sudeste Asiático",
@@ -507,7 +507,7 @@
     "População": 7106846
   },
   {
-    "País": "Rússia*",
+    "País": "Rússia",
     "Coordenada X": -24,
     "Coordenada Y": 118,
     "Região": "Ásia Setentrional",
@@ -585,7 +585,7 @@
     "População": 10694662
   },
   {
-    "País": "Timor-Leste*",
+    "País": "Timor-Leste",
     "Coordenada X": 148,
     "Coordenada Y": -169,
     "Região": "Sudeste Asiático",
@@ -611,7 +611,7 @@
     "População": 6432486
   },
   {
-    "País": "Turquia*",
+    "País": "Turquia",
     "Coordenada X": -186,
     "Coordenada Y": 31,
     "Região": "Ásia Ocidental",

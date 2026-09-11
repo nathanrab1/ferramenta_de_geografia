@@ -1,0 +1,6 @@
+<!-- Mapa da Oceania para a Ferramenta de Regionalização (CLIC).
+     Cada país é um elemento com id = código ISO 3166-1 alpha-2 em minúsculas;
+     Austrália, Nova Zelândia, Papua-Nova Guiné e Ilhas Salomão têm forma, os
+     dez países insulares pequenos são círculos (as ilhas reais são pontinhos
+     agrupados dentro deles). Indonésia e outros vizinhos ficam cinza.
+     Derivado de "Blank Map Oceania" (Wikimedia Commons). -->

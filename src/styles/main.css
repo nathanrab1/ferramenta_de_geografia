@@ -555,11 +555,14 @@ body {
     max-height: 100%;
 }
 
+/* --traco: espessura das fronteiras, definida pelo MapaPanel proporcional
+   à largura do viewBox (1 para um mapa de ~750 unidades); sem isso mapas
+   pequenos (Oceania, 300 unidades) ficariam com bordas grossas */
 .mapa-svg path,
 .mapa-svg g {
     transition: fill 0.3s ease;
     stroke: #ffffff;
-    stroke-width: 1;
+    stroke-width: var(--traco, 1);
 }
 
 /* Reset do mapa: volta ao cinza sem fade (veja resetarMapa) */

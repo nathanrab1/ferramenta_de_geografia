@@ -14,8 +14,8 @@ window.CONFIG = {
         path4676: 'bn', path3768: 'bt', path3896: 'kh', path1324: 'qa', path1754: 'kz', path564: 'cn',
         path1234: 'cy', path4360: 'kp', path3898: 'kr', path3276: 'eg', path640: 'ae', path3660: 'ph',
         path3330: 'ge', path448: 'ye', path3342: 'in', path60: 'id', path2462: 'ir', path1900: 'iq',
-        path3326: 'il', path1366: 'jp', path626: 'jo', path3338: 'kw', path4358: 'la', path4672: 'lb',
-        path2578: 'my', path2464: 'mm', path2576: 'mn', path4674: 'np', path2642: 'om', path3324: 'ps',
+        path4356: 'il', path1366: 'jp', path626: 'jo', path3338: 'kw', path4358: 'la', path4672: 'lb',
+        path2578: 'my', path2464: 'mm', path2576: 'mn', path4674: 'np', path2642: 'om', path3326: 'ps',
         path52: 'pk', path2554: 'kg', path780: 'ru', path2550: 'sy', path4350: 'lk', path1774: 'th',
         path3874: 'tj', path4438: 'tm', path1314: 'tr', path1326: 'uz', path1418: 'vn',
         // Não está na tabela: fica cinza, mas com id para não virar "ilha" de outro país
@@ -30,7 +30,7 @@ window.CONFIG = {
                                                                   // Sumatra, Kalimantan, Java, Papua, Sulawesi, Bali, Sumbawa, Halmahera, Timor
         jp: ['jp', 'path1402', 'path1358', 'path1388'],           // Honshu, Hokkaido, Kyushu, Shikoku
         my: ['my', 'path2580'],                                   // península + Sarawak/Sabah
-        ps: ['ps', 'path4356'],                                   // Cisjordânia + Gaza
+        ps: ['ps', 'path3324'],                                   // Cisjordânia + Gaza
         kw: ['kw', 'path3292'],                                   // + ilha de Bubiyan
         tr: ['tr', 'path1312'],                                   // + Trácia
         ru: ['ru', 'path1138'],                                   // + Sacalina
