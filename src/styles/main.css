@@ -60,6 +60,17 @@ body {
     color: var(--color-neutral-black);
     padding: 20px;
     min-width: 200px;
+    /* Só a tabela rola (.tabela-scroll); o seletor de coluna fica
+       parado em cima e o cabeçalho da tabela gruda no topo da rolagem */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tabela-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
 }
 
 /* Seletor da coluna exibida na tabela */
@@ -173,23 +184,64 @@ body {
     flex-direction: column;
 }
 
-/* Cabeçalho do painel: coluna do workspace em exibição */
+/* Cabeçalho do painel: coluna do workspace em exibição à esquerda e
+   botões de baixar/abrir projeto à direita */
 .blockly-titulo {
     flex-shrink: 0;
-    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    padding: 8px 15px;
     font-size: 14px;
     color: var(--color-neutral-black);
     background-color: var(--color-neutral-white);
     border-bottom: 2px solid var(--accent-orange);
+}
+
+.blockly-titulo-texto {
+    flex: 1;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.projeto-botoes {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.projeto-btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-neutral-black);
+    background-color: var(--color-neutral-white);
+    border: 2px solid var(--accent-orange);
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.projeto-btn:hover {
+    background-color: var(--accent-orange);
+    color: var(--text-light);
 }
 
 .blockly-workspace {
     flex: 1;
     width: 100%;
     position: relative;
+}
+
+/* Seletor de cor do bloco "Pintar" (FieldColour): células maiores que
+   o padrão do Blockly (20px), para facilitar o clique */
+.blocklyColourTable > tr > td {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #888;
 }
 
 /* Rodape do painel do mapa: botoes e slider de velocidade, abaixo do mapa */

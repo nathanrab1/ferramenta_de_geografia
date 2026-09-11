@@ -7,8 +7,8 @@
 
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
-    <link rel="stylesheet" href="src/styles/colors.css?v=8">
-    <link rel="stylesheet" href="src/styles/main.css?v=8">
+    <link rel="stylesheet" href="src/styles/colors.css?v=10">
+    <link rel="stylesheet" href="src/styles/main.css?v=10">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -23,7 +23,7 @@
     <div id="app">
         <dados-panel v-if="!loading" :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(0, $event)"></div>
-        <blockly-panel v-if="!loading" :paises="paisesOrdenados" :coluna="colunaSelecionada" :style="{ width: panelWidths[1] + 'px' }"></blockly-panel>
+        <blockly-panel v-if="!loading" ref="blockly" :paises="paisesOrdenados" :coluna="colunaSelecionada" :style="{ width: panelWidths[1] + 'px' }" @baixar-projeto="baixarProjeto" @abrir-projeto="abrirProjeto"></blockly-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(1, $event)"></div>
         <mapa-panel v-if="!loading" :paises="paises" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
         <div v-if="loading" style="padding: 20px; text-align: center;">
@@ -83,7 +83,7 @@
                             </option>
                         </select>
                     </div>
-                    <div style="overflow-x: auto;">
+                    <div class="tabela-scroll">
                         <table class="dados-table" ref="tabela">
                             <thead>
                                 <tr>
@@ -144,6 +144,11 @@
         // Cinza original dos paises no america_map.svg (fill:#787878)
         const COR_PADRAO_PAIS = '#787878';
 
+        // Identificação do arquivo de projeto (.json): formato e versão,
+        // para recusar arquivos de outra origem ou de versões futuras
+        const PROJETO_FORMATO = 'clic-regionalizacao';
+        const PROJETO_VERSAO = 1;
+
         // Componente: MapaPanel
         const MapaPanel = {
             name: 'MapaPanel',
@@ -160,7 +165,7 @@
                     startPanY: 0,
                     // Velocidade da pintura (1 = lento ... 10 = rápido)
                     velocidade: 9,
-                    // Itens {cor, nomeCor, rotulo, detalhe} montados pelo
+                    // Itens {cor, rotulo, detalhe} montados pelo
                     // BlocklyPanel a partir dos blocos, ao executar
                     legenda: [],
                     // Colunas usadas nos blocos "se" da última execução;
@@ -610,6 +615,66 @@
                     } catch (error) {
                         console.error('❌ Erro:', error);
                         alert('Erro ao carregar dados. Veja o console.');
+                    }
+                },
+                // Botão "Baixar projeto": salva em um .json os blocos de
+                // todas as colunas, a ordenação de cada uma e a coluna em
+                // exibição, para abrir depois (ou em outro computador)
+                baixarProjeto() {
+                    const projeto = {
+                        formato: PROJETO_FORMATO,
+                        versao: PROJETO_VERSAO,
+                        criadoEm: new Date().toISOString(),
+                        colunaSelecionada: this.colunaSelecionada,
+                        ordenacoes: this.ordenacoes,
+                        workspaces: this.$refs.blockly.exportarWorkspaces()
+                    };
+                    const blob = new Blob([JSON.stringify(projeto, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `regionalizacao-${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                },
+                // Botão "Abrir projeto": substitui o projeto atual pelo do
+                // arquivo escolhido (já lido e parseado pelo BlocklyPanel)
+                async abrirProjeto(projeto) {
+                    if (!projeto || projeto.formato !== PROJETO_FORMATO) {
+                        alert('Este arquivo não é um projeto da Ferramenta de Regionalização.');
+                        return;
+                    }
+                    if (projeto.versao > PROJETO_VERSAO) {
+                        alert('Este projeto foi salvo em uma versão mais nova da ferramenta e não pode ser aberto aqui.');
+                        return;
+                    }
+                    // Só pergunta se há trabalho a perder
+                    const temBlocos = Object.keys(this.$refs.blockly.exportarWorkspaces()).length > 0;
+                    if (temBlocos && !confirm('Abrir o projeto vai substituir os blocos atuais de todas as colunas. Continuar?')) {
+                        return;
+                    }
+
+                    // Colunas que não existem mais nos dados são ignoradas
+                    const colunas = Object.keys(this.paises[0] || {});
+                    const workspaces = Object.fromEntries(
+                        Object.entries(projeto.workspaces || {}).filter(([c]) => colunas.includes(c))
+                    );
+                    this.ordenacoes = Object.fromEntries(
+                        Object.entries(projeto.ordenacoes || {}).filter(([c]) => colunas.includes(c))
+                    );
+                    if (colunas.includes(projeto.colunaSelecionada)) {
+                        this.colunaSelecionada = projeto.colunaSelecionada;
+                    }
+                    // Espera o BlocklyPanel reagir à troca de coluna (se
+                    // houve) antes de trocar os workspaces, senão a troca
+                    // gravaria os blocos antigos por cima dos importados
+                    await this.$nextTick();
+                    if (window.resetarMapa) window.resetarMapa();
+                    try {
+                        this.$refs.blockly.importarWorkspaces(workspaces);
+                    } catch (error) {
+                        console.error('❌ Erro ao abrir projeto:', error);
+                        alert('Não foi possível carregar os blocos deste projeto: ' + error.message);
                     }
                 },
                 // Painel de dados sempre do tamanho da tabela (coluna atual)

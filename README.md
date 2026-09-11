@@ -63,8 +63,12 @@ Aplicação web interativa para ensino de regionalização do continente america
 - Legenda automática e tooltip do mapa com os valores da coluna
 - Botão Parar / Resetar
 
+- Baixar/abrir projeto: botões no painel Blockly salvam em um `.json` os
+  blocos de todas as colunas, a ordenação de cada uma e a coluna em exibição,
+  e reabrem esse arquivo depois (ou em outro computador).
+
 ### 🔜 Próximas features
-- Salvar/carregar projetos (persistência dos workspaces)
+- Persistência automática no navegador (localStorage)
 
 ## 📚 Sequência Didática
 

@@ -10,6 +10,9 @@ export default {
     // o seu próprio workspace (uma regionalização por coluna); ao trocar a
     // coluna o painel guarda os blocos da anterior e mostra os da nova.
     props: ['paises', 'coluna'],
+    // baixar-projeto / abrir-projeto: os botões ficam aqui, mas quem monta
+    // e aplica o arquivo é o App (que também guarda a ordenação e a coluna)
+    emits: ['baixar-projeto', 'abrir-projeto'],
     data() {
         return {
             // markRaw ao atribuir: o workspace do Blockly NAO pode virar
@@ -32,7 +35,14 @@ export default {
     },
     template: `
         <div class="panel blockly-panel">
-            <div class="blockly-titulo">Regionalização por: <strong>{{ rotulo }}</strong></div>
+            <div class="blockly-titulo">
+                <span class="blockly-titulo-texto">Regionalização por: <strong>{{ rotulo }}</strong></span>
+                <span class="projeto-botoes">
+                    <button class="projeto-btn" @click="$emit('baixar-projeto')" title="Salva os blocos de todas as colunas em um arquivo .json">💾 Baixar projeto</button>
+                    <button class="projeto-btn" @click="$refs.arquivo.click()" title="Carrega um arquivo .json salvo com o botão Baixar">📂 Abrir projeto</button>
+                    <input type="file" accept=".json,application/json" ref="arquivo" hidden @change="escolherArquivo">
+                </span>
+            </div>
             <div id="blocklyDiv" class="blockly-workspace"></div>
         </div>
     `,
@@ -99,19 +109,32 @@ export default {
                 delete Blockly.JavaScript['se_entre'];
             }
 
-            // Opções de cor do bloco de pintar (também usadas na legenda)
-            const CORES = this.CORES = [
-                ["🔴 Vermelho", "#ff0000"],
-                ["🔵 Azul", "#0000ff"],
-                ["🟢 Verde", "#00ff00"],
-                ["🟡 Amarelo", "#ffff00"],
-                ["🟠 Laranja", "#ff8800"],
-                ["🟣 Roxo", "#8800ff"],
-                ["🟤 Marrom", "#8b4513"],
-                ["⚫ Preto", "#000000"],
-                ["⚪ Branco", "#ffffff"],
-                ["🩷 Rosa", "#ff69b4"]
+            // Paleta do bloco de pintar: grade de 9 linhas (uma por
+            // matiz) x 7 colunas (do claro ao escuro), no seletor de cor
+            // do Blockly (FieldColour). Sem cinzas: o cinza é a cor dos
+            // países ainda não pintados no mapa.
+            const PALETA = [
+                // vermelhos
+                '#f5c6c6', '#f07070', '#e83c2c', '#c82e1e', '#a21c10', '#7c1408', '#4b0804',
+                // laranjas
+                '#f9cfa5', '#f3a170', '#ef8c34', '#ee7b2c', '#c76b1e', '#a45614', '#7a3c0c',
+                // amarelos / marrons
+                '#fdfd9e', '#fefe7c', '#f5d670', '#f7cc3e', '#d9a83c', '#a8762f', '#6c3a30',
+                // amarelos / oliva
+                '#fdfdca', '#fefe7a', '#fefe4e', '#f8d63e', '#baa422', '#7c7c1c', '#3c3c0c',
+                // verdes
+                '#bcf9a2', '#a2f9a2', '#7cfa5c', '#5cda2c', '#2eaa1c', '#1e7c10', '#0e3c08',
+                // cianos / verde-azulados
+                '#aafaf8', '#7cfbfb', '#5cdad2', '#4cbaba', '#3c8c8c', '#2c6c6c', '#183c3c',
+                // azuis
+                '#dafefb', '#a2fbf9', '#5cdafb', '#2c5cfb', '#1c1cfb', '#0c0caa', '#08086c',
+                // roxos
+                '#dadafb', '#aaaaf5', '#6c6cda', '#7c32fb', '#6c0cda', '#3c1caa', '#2c0c6c',
+                // magentas
+                '#fbdafb', '#f9a2f9', '#da6cda', '#da3cda', '#aa3caa', '#6c2c6c', '#3c0c3c'
             ];
+            const PALETA_COLUNAS = 7;
+            const COR_INICIAL = '#e83c2c'; // vermelho
 
             // Definir bloco de início do programa: um bloco "C" (loop)
             // que executa os blocos internos uma vez para cada país
@@ -153,9 +176,12 @@ export default {
             // Bloco "Pintar [cor]": pinta o país atual do laço
             Blockly.Blocks['pintar'] = {
                 init: function() {
+                    const campoCor = new Blockly.FieldColour(COR_INICIAL);
+                    campoCor.setColours(PALETA);
+                    campoCor.setColumns(PALETA_COLUNAS);
                     this.appendDummyInput()
                         .appendField("Pintar")
-                        .appendField(new Blockly.FieldDropdown(CORES), "COR");
+                        .appendField(campoCor, "COR");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(160);
@@ -387,21 +413,26 @@ export default {
         trocarWorkspace(nova, anterior) {
             // O laço em andamento pintaria com o programa da coluna antiga
             window.pararExecucao();
-
-            if (anterior) {
-                this.estados[anterior] = Blockly.serialization.workspaces.save(this.workspace);
-            }
-
+            if (anterior) this.guardarEstado(anterior);
+            this.carregarColuna(nova);
+        },
+        // Guarda os blocos em exibição como o estado da coluna
+        guardarEstado(coluna) {
+            this.estados[coluna] = Blockly.serialization.workspaces.save(this.workspace);
+        },
+        // Mostra no workspace o estado guardado da coluna (ou um workspace
+        // novo) e a biblioteca de blocos do tipo dela
+        carregarColuna(coluna) {
             // Antes de criar qualquer bloco: os "se" leem a coluna ao nascer
-            this.colunaAtual = nova;
-            this.workspace.updateToolbox(this.toolboxPara(nova));
+            this.colunaAtual = coluna;
+            this.workspace.updateToolbox(this.toolboxPara(coluna));
 
             // Sem eventos: a troca não deve entrar no histórico de desfazer
             Blockly.Events.disable();
             try {
                 this.workspace.clear();
-                if (this.estados[nova]) {
-                    Blockly.serialization.workspaces.load(this.estados[nova], this.workspace);
+                if (this.estados[coluna]) {
+                    Blockly.serialization.workspaces.load(this.estados[coluna], this.workspace);
                 } else {
                     this.carregarBlocosIniciais();
                 }
@@ -411,14 +442,56 @@ export default {
             this.workspace.clearUndo();
             Blockly.svgResize(this.workspace);
         },
+        // Estado de todas as colunas (inclusive a em exibição), para o
+        // arquivo do projeto. Só entram colunas onde o aluno montou algo
+        // além do "para cada país".
+        exportarWorkspaces() {
+            if (!this.workspace) return {};
+            this.guardarEstado(this.colunaAtual);
+            const comBlocos = {};
+            for (const [coluna, estado] of Object.entries(this.estados)) {
+                if ((estado.blocks?.blocks || []).some(b => b.type !== 'iniciar_programa' || b.inputs)) {
+                    comBlocos[coluna] = estado;
+                }
+            }
+            return comBlocos;
+        },
+        // Substitui os workspaces de todas as colunas pelos do arquivo e
+        // recarrega a coluna em exibição. Lança erro se algum estado não
+        // puder ser carregado (arquivo de outra versão, por exemplo).
+        importarWorkspaces(workspaces) {
+            window.pararExecucao();
+            const anteriores = this.estados;
+            this.estados = { ...workspaces };
+            try {
+                this.carregarColuna(this.coluna);
+            } catch (error) {
+                // Volta ao que estava, para não deixar o workspace vazio
+                this.estados = anteriores;
+                this.carregarColuna(this.coluna);
+                throw error;
+            }
+        },
+        // Botão "Abrir projeto": lê o .json escolhido e repassa ao App
+        async escolherArquivo(event) {
+            const arquivo = event.target.files[0];
+            // Permite escolher o mesmo arquivo de novo depois
+            event.target.value = '';
+            if (!arquivo) return;
+            let projeto;
+            try {
+                projeto = JSON.parse(await arquivo.text());
+            } catch (error) {
+                alert('Não foi possível ler o arquivo: não é um JSON válido.');
+                return;
+            }
+            this.$emit('abrir-projeto', projeto);
+        },
         // Legenda do mapa: um item por bloco "Pintar" que vai executar
         // (dentro do "para cada país"), com a cor e os valores das condições
         // "se" que o envolvem. Sem condição, o rótulo é "Todos os países".
         // Devolve também a coluna do workspace (tooltip do mapa).
         montarLegenda() {
-            const nomesCores = Object.fromEntries(
-                (this.CORES || []).map(([nome, cor]) => [cor, nome.replace(/^\S+\s/, '')])
-            );
             const itens = [];
             const vistos = new Set();
             const coluna = this.colunaAtual;
@@ -463,7 +536,7 @@ export default {
                 const chave = `${cor}|${rotulo}`;
                 if (vistos.has(chave)) continue;
                 vistos.add(chave);
-                itens.push({ cor, nomeCor: nomesCores[cor] || cor, rotulo, detalhe });
+                itens.push({ cor, rotulo, detalhe });
             }
             return { itens, colunas: coluna ? [coluna] : [] };
         },
@@ -475,8 +548,10 @@ export default {
                 const code = Blockly.JavaScript.workspaceToCode(this.workspace);
                 console.log('📝 Código:', code);
                 if (code.trim()) {
-                    // Encerra uma execução anterior ainda em andamento
-                    window.pararExecucao();
+                    // Encerra uma execução anterior ainda em andamento e
+                    // limpa o mapa, para a nova varredura começar do zero
+                    if (window.resetarMapa) window.resetarMapa();
+                    else window.pararExecucao();
                     if (window.atualizarLegenda) {
                         const legenda = this.montarLegenda();
                         window.atualizarLegenda(legenda.itens, legenda.colunas);
