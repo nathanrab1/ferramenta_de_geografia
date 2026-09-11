@@ -7,8 +7,8 @@
 
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
-    <link rel="stylesheet" href="src/styles/colors.css?v=12">
-    <link rel="stylesheet" href="src/styles/main.css?v=12">
+    <link rel="stylesheet" href="src/styles/colors.css?v=13">
+    <link rel="stylesheet" href="src/styles/main.css?v=13">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -21,12 +21,16 @@
 </head>
 <body>
     <div id="app">
-        <dados-panel v-if="!loading" :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
-        <div v-if="!loading" class="resizer" @pointerdown="startResize(0, $event)"></div>
-        <blockly-panel v-if="!loading" ref="blockly" :paises="paisesOrdenados" :coluna="colunaSelecionada" :style="{ width: panelWidths[1] + 'px' }" @baixar-projeto="baixarProjeto" @abrir-projeto="abrirProjeto"></blockly-panel>
-        <div v-if="!loading" class="resizer" @pointerdown="startResize(1, $event)"></div>
-        <mapa-panel v-if="!loading" :paises="paises" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
-        <div v-if="loading" class="carregando">
+        <!-- Sem continente na URL: tela inicial de escolha -->
+        <tela-inicial v-if="!continente"></tela-inicial>
+        <template v-else-if="!loading">
+            <dados-panel :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
+            <div class="resizer" @pointerdown="startResize(0, $event)"></div>
+            <blockly-panel ref="blockly" :paises="paisesOrdenados" :coluna="colunaSelecionada" :continente="continente" :style="{ width: panelWidths[1] + 'px' }" @baixar-projeto="baixarProjeto" @abrir-projeto="abrirProjeto" @trocar-continente="trocarContinente"></blockly-panel>
+            <div class="resizer" @pointerdown="startResize(1, $event)"></div>
+            <mapa-panel :paises="paises" :paises-iso-mapping="paisesISOMapping" :continente="continente"></mapa-panel>
+        </template>
+        <div v-else class="carregando">
             <h2>⏳ Carregando...</h2>
         </div>
     </div>
@@ -34,9 +38,47 @@
     <!-- Componentes e App -->
     <script type="module">
         import BlocklyPanel from './src/components/BlocklyPanel.js';
-        import { ORDENACAO_PADRAO, ordenarPaises } from './src/utils/ordenacao.js';
+        import { ORDENACAO_PADRAO, ordenarPaises, definirOrdemValores } from './src/utils/ordenacao.js';
+        import { CONTINENTES, LISTA_CONTINENTES, arquivosDoContinente, continenteDaURL, urlDoContinente } from './src/continentes.js';
 
         const { createApp } = Vue;
+
+        // Componente: TelaInicial (escolha do continente). Os cartões são
+        // links: abrir um continente recarrega a página com ?continente=id,
+        // o que também serve de link direto para os alunos.
+        const TelaInicial = {
+            name: 'TelaInicial',
+            data() {
+                return { continentes: LISTA_CONTINENTES };
+            },
+            template: `
+                <div class="tela-inicial">
+                    <header class="tela-inicial-cabecalho">
+                        <h1>Ferramenta de Regionalização</h1>
+                        <p>Escolha o continente que você vai regionalizar</p>
+                    </header>
+                    <div class="continentes">
+                        <component
+                            v-for="c in continentes" :key="c.id"
+                            :is="c.disponivel ? 'a' : 'div'"
+                            :href="c.disponivel ? urlDo(c) : null"
+                            class="continente-cartao"
+                            :class="{ indisponivel: !c.disponivel }"
+                            :aria-disabled="!c.disponivel"
+                        >
+                            <span class="continente-icone" aria-hidden="true">{{ c.icone }}</span>
+                            <span class="continente-nome">{{ c.nome }}</span>
+                            <span class="continente-descricao">{{ c.descricao }}</span>
+                            <span v-if="!c.disponivel" class="continente-etiqueta">Em breve</span>
+                        </component>
+                    </div>
+                    <footer class="tela-inicial-rodape">CLIC · Geografia</footer>
+                </div>
+            `,
+            methods: {
+                urlDo: urlDoContinente
+            }
+        };
 
         // Componente: DadosPanel
         const DadosPanel = {
@@ -142,18 +184,24 @@
             }
         };
 
-        // Cinza original dos paises no america_map.svg (fill:#787878)
+        // Cinza dos países ainda não pintados (fill original dos SVGs)
         const COR_PADRAO_PAIS = '#787878';
 
         // Identificação do arquivo de projeto (.json): formato e versão,
-        // para recusar arquivos de outra origem ou de versões futuras
+        // para recusar arquivos de outra origem ou de versões futuras.
+        // Versão 2: passou a gravar o continente (a 1 era só a América).
         const PROJETO_FORMATO = 'clic-regionalizacao';
-        const PROJETO_VERSAO = 1;
+        const PROJETO_VERSAO = 2;
+        // Projeto de outro continente guardado enquanto a página recarrega
+        // com o continente certo (veja abrirProjeto)
+        const CHAVE_PROJETO_PENDENTE = 'clic-regionalizacao-projeto-pendente';
 
         // Componente: MapaPanel
         const MapaPanel = {
             name: 'MapaPanel',
-            props: ['paises', 'paisesIsoMapping'],
+            // continente: entrada de src/continentes.js (arquivo do mapa,
+            // territórios a ocultar e ajustes do SVG)
+            props: ['paises', 'paisesIsoMapping', 'continente'],
             data() {
                 return {
                     svgContent: '',
@@ -277,11 +325,12 @@
                 },
                 async carregarMapa() {
                     try {
-                        const response = await fetch('src/assets/svg/america_map.svg');
+                        const response = await fetch(arquivosDoContinente(this.continente).mapa);
                         this.svgContent = await response.text();
                         await this.$nextTick();
-                        this.ocultarNaoAmericanos();
-                        this.adicionarAguaGrandesLagos();
+                        this.ocultarForaDoContinente();
+                        const svg = this.$el.querySelector('svg');
+                        if (svg && this.continente.prepararMapa) this.continente.prepararMapa(svg);
                         this.ajustarViewBox();
                         console.log('✅ Mapa carregado');
                     } catch (error) {
@@ -310,36 +359,21 @@
                     this.translateY = my - razao * (my - this.translateY);
                     this.scale = novaEscala;
                 },
-                // O arquivo de origem e um mapa-mundi recortado, entao ainda traz
-                // territorios que nao fazem parte das Americas.
-                ocultarNaoAmericanos() {
+                // Remove do mapa os territórios listados em continente.ocultar
+                // (os arquivos de origem são mapas-múndi recortados, então
+                // ainda trazem terras que não fazem parte do continente)
+                ocultarForaDoContinente() {
                     const svg = this.$el.querySelector('svg');
                     if (!svg) return;
 
-                    // gl = Groenlandia, is = Islandia, aq = Antartida,
-                    // ck/ki/pf/pn = ilhas do Pacifico.
-                    for (const codigoISO of ['gl', 'is', 'aq', 'ck', 'ki', 'pf', 'pn']) {
+                    for (const codigoISO of this.continente.ocultar || []) {
                         const elemento = svg.querySelector(`#${codigoISO}`);
                         if (elemento) elemento.remove();
                     }
                 },
-                // Os Grandes Lagos nao sao elementos do SVG: sao buracos recortados
-                // nos caminhos dos EUA/Canada, entao mostram o fundo da pagina.
-                // Colocamos um poligono azul ATRAS de tudo, so na regiao dos lagos
-                // (coordenadas do viewBox original), para os buracos ficarem azuis.
-                // O canto inferior direito e chanfrado para nao vazar no Atlantico.
-                adicionarAguaGrandesLagos() {
-                    const svg = this.$el.querySelector('svg');
-                    if (!svg || svg.querySelector('#grandes-lagos')) return;
-
-                    const poligono = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-                    poligono.setAttribute('id', 'grandes-lagos');
-                    poligono.setAttribute('points', '1436,-18 1668,-18 1668,115 1640,134 1436,134');
-                    svg.insertBefore(poligono, svg.firstChild);
-                },
-                // O viewBox do arquivo (2752x1537) e bem maior que o desenho das
-                // Americas, o que deixava muita area vazia em volta. Aqui medimos
-                // a caixa real dos paises e recortamos o viewBox nela.
+                // O viewBox do arquivo costuma ser bem maior que o desenho do
+                // continente, o que deixava muita área vazia em volta. Aqui
+                // medimos a caixa real dos países e recortamos o viewBox nela.
                 ajustarViewBox() {
                     const svg = this.$el.querySelector('svg');
                     if (!svg) return;
@@ -361,9 +395,9 @@
                     svg.removeAttribute('width');
                     svg.removeAttribute('height');
                 },
-                // Medimos so os paises da base: o arquivo e um mapa-mundi recortado
-                // e ainda carrega territorios distantes (Ilhas Cook, Kiribati,
-                // Polinesia Francesa, Islandia, Antartida) que esticariam a caixa.
+                // Medimos só os países da base: o arquivo pode trazer territórios
+                // distantes (na América: Ilhas Cook, Kiribati, Polinésia Francesa,
+                // Antártida...) que esticariam a caixa.
                 medirPaises(svg) {
                     // getBBox() devolve coordenadas no espaco local do elemento e
                     // varios grupos deste SVG tem transform="matrix(2.19...)". Por
@@ -542,7 +576,7 @@
                         // na ordem das colunas dos dados, não dos blocos
                         atributos: Object.keys(pais)
                             .filter(c => this.colunasVisualizadas.includes(c))
-                            .map(c => ({ rotulo: c, valor: pais[c] })),
+                            .map(c => ({ rotulo: c, valor: pais[c] ?? '-' })),
                         x: clientX - caixa.left,
                         y: clientY - caixa.top,
                         // Na metade direita do painel o tooltip abre para a
@@ -636,19 +670,23 @@
         // App principal
         const app = createApp({
             components: {
+                TelaInicial,
                 DadosPanel,
                 BlocklyPanel,
                 MapaPanel
             },
             data() {
+                // Continente da URL (?continente=id); sem ele, tela inicial
+                const continente = continenteDaURL();
                 return {
+                    continente,
                     paises: [],
                     paisesISOMapping: {},
                     loading: true,
                     // Coluna da tabela em exibição. Cada coluna tem o seu
                     // próprio workspace no BlocklyPanel (uma regionalização
                     // por coluna)
-                    colunaSelecionada: 'Região',
+                    colunaSelecionada: continente ? continente.colunaInicial : null,
                     // Ordenação da tabela, lembrada por coluna (faz parte da
                     // regionalização daquela coluna, como o workspace).
                     // Colunas ausentes usam ORDENACAO_PADRAO.
@@ -687,7 +725,11 @@
                 }
             },
             async mounted() {
+                if (!this.continente) return;
+                document.title = `Regionalização da ${this.continente.nome} - CLIC Geografia`;
+                definirOrdemValores(this.continente.ordemValores);
                 await this.carregarDados();
+                this.abrirProjetoPendente();
                 // Pointer Events: o divisor também se arrasta com o dedo
                 document.addEventListener('pointermove', this.handleMouseMove);
                 document.addEventListener('pointerup', this.stopResize);
@@ -701,11 +743,12 @@
             methods: {
                 async carregarDados() {
                     try {
+                        const arquivos = arquivosDoContinente(this.continente);
                         // Adicionar timestamp para evitar cache
                         const timestamp = new Date().getTime();
                         const [resPaises, resISO] = await Promise.all([
-                            fetch(`src/assets/data/paises_data.json?v=${timestamp}`),
-                            fetch(`src/assets/data/paises_iso_mapping.json?v=${timestamp}`)
+                            fetch(`${arquivos.paises}?v=${timestamp}`),
+                            fetch(`${arquivos.iso}?v=${timestamp}`)
                         ]);
 
                         this.paises = await resPaises.json();
@@ -727,6 +770,7 @@
                         formato: PROJETO_FORMATO,
                         versao: PROJETO_VERSAO,
                         criadoEm: new Date().toISOString(),
+                        continente: this.continente.id,
                         colunaSelecionada: this.colunaSelecionada,
                         ordenacoes: this.ordenacoes,
                         workspaces: this.$refs.blockly.exportarWorkspaces()
@@ -735,7 +779,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `regionalizacao-${new Date().toISOString().slice(0, 10)}.json`;
+                    a.download = `regionalizacao-${this.continente.id}-${new Date().toISOString().slice(0, 10)}.json`;
                     a.click();
                     URL.revokeObjectURL(url);
                 },
@@ -750,8 +794,26 @@
                         alert('Este projeto foi salvo em uma versão mais nova da ferramenta e não pode ser aberto aqui.');
                         return;
                     }
+                    // Projetos da versão 1 eram sempre da América
+                    const idContinente = projeto.continente || 'america';
+                    const outro = CONTINENTES[idContinente];
+                    if (!outro || !outro.disponivel) {
+                        alert(`Este projeto é de um continente que esta ferramenta ainda não tem (${idContinente}).`);
+                        return;
+                    }
                     // Só pergunta se há trabalho a perder
                     const temBlocos = Object.keys(this.$refs.blockly.exportarWorkspaces()).length > 0;
+                    if (outro.id !== this.continente.id) {
+                        const aviso = temBlocos ? ' Os blocos atuais serão perdidos.' : '';
+                        if (!confirm(`Este projeto é da ${outro.nome}. Trocar para a ${outro.nome} e abrir o projeto?${aviso}`)) {
+                            return;
+                        }
+                        // A página recarrega no outro continente e abre o
+                        // projeto logo depois (veja abrirProjetoPendente)
+                        sessionStorage.setItem(CHAVE_PROJETO_PENDENTE, JSON.stringify(projeto));
+                        location.href = urlDoContinente(outro);
+                        return;
+                    }
                     if (temBlocos && !confirm('Abrir o projeto vai substituir os blocos atuais de todas as colunas. Continuar?')) {
                         return;
                     }
@@ -778,6 +840,40 @@
                         console.error('❌ Erro ao abrir projeto:', error);
                         alert('Não foi possível carregar os blocos deste projeto: ' + error.message);
                     }
+                },
+                // Projeto de outro continente deixado por abrirProjeto antes
+                // de recarregar a página: abre assim que o Blockly existir
+                abrirProjetoPendente() {
+                    const texto = sessionStorage.getItem(CHAVE_PROJETO_PENDENTE);
+                    if (!texto) return;
+                    sessionStorage.removeItem(CHAVE_PROJETO_PENDENTE);
+                    let projeto;
+                    try {
+                        projeto = JSON.parse(texto);
+                    } catch (error) {
+                        return;
+                    }
+                    if (projeto.continente !== this.continente.id) return;
+                    // O BlocklyPanel só cria o workspace ~500ms depois de montar
+                    const tentar = (restantes) => {
+                        const blockly = this.$refs.blockly;
+                        if (blockly && blockly.workspace) {
+                            this.abrirProjeto(projeto);
+                        } else if (restantes > 0) {
+                            setTimeout(() => tentar(restantes - 1), 200);
+                        }
+                    };
+                    tentar(25);
+                },
+                // Botão do continente no BlocklyPanel: volta à tela inicial
+                // (recarrega a página sem ?continente). Os blocos ficam só
+                // em memória, então avisa se houver trabalho a perder.
+                trocarContinente() {
+                    const temBlocos = Object.keys(this.$refs.blockly.exportarWorkspaces()).length > 0;
+                    if (temBlocos && !confirm('Voltar à escolha de continente descarta os blocos atuais. Baixe o projeto antes se quiser guardá-los. Continuar?')) {
+                        return;
+                    }
+                    location.href = location.pathname;
                 },
                 // Painel de dados sempre do tamanho da tabela (coluna atual)
                 ajustarPainelDados(largura) {

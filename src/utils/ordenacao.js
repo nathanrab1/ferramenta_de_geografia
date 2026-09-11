@@ -2,10 +2,13 @@
 // o laço "para cada país" percorre os países e pelo dropdown do bloco "se ="
 
 // Colunas com ordem própria (geográfica, não alfabética); as demais
-// ficam em ordem alfabética
-export const ORDEM_VALORES = {
-    'Região': ['Norte', 'Central', 'Sul']
-};
+// ficam em ordem alfabética. Vem do continente carregado (veja
+// src/continentes.js): o App chama definirOrdemValores ao abrir um.
+let ORDEM_VALORES = {};
+
+export function definirOrdemValores(ordem) {
+    ORDEM_VALORES = ordem || {};
+}
 
 // Ordenação padrão de toda coluna: nome do país, crescente
 export const ORDENACAO_PADRAO = { por: 'País', direcao: 'asc' };

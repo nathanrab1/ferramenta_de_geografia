@@ -279,11 +279,18 @@ body {
     flex-direction: column;
 }
 
-/* Cabeçalho do painel: coluna do workspace em exibição à esquerda e
-   botões de baixar/abrir projeto à direita (estilo em .painel-cabecalho) */
+/* Cabeçalho do painel: botão de voltar aos continentes, coluna do
+   workspace em exibição e botões de baixar/abrir projeto à direita
+   (estilo comum em .painel-cabecalho) */
+.btn-continentes {
+    flex-shrink: 0;
+}
+
 .blockly-titulo-texto {
     flex: 1;
-    min-width: 0;
+    /* Largura mínima para o texto: quando não cabe, os botões de projeto
+       descem para a linha de baixo (flex-wrap) em vez de o texto sumir */
+    min-width: 12em;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -596,6 +603,123 @@ body {
 .mapa-container[style*="cursor: grabbing"] .mapa-svg path,
 .mapa-container[style*="cursor: grabbing"] .mapa-svg g {
     cursor: grabbing !important;
+}
+
+/* Tela inicial: escolha do continente. Ocupa a janela toda (o #app é
+   flex 100vh); os cartões são links para ?continente=id */
+.tela-inicial {
+    width: 100%;
+    min-height: 100vh;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 40px 24px;
+    background-color: var(--color-neutral-white);
+    color: var(--color-neutral-black);
+}
+
+.tela-inicial-cabecalho {
+    text-align: center;
+}
+
+.tela-inicial-cabecalho h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--color-primary-blue);
+    margin-bottom: 8px;
+}
+
+.tela-inicial-cabecalho p {
+    font-size: 16px;
+    color: var(--text-secondary);
+}
+
+.continentes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+}
+
+.continente-cartao {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 220px;
+    padding: 28px 20px 24px;
+    border: 2px solid var(--color-primary-blue);
+    border-radius: 12px;
+    background-color: var(--color-neutral-white);
+    color: var(--color-neutral-black);
+    text-decoration: none;
+    text-align: center;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+}
+
+a.continente-cartao:hover,
+a.continente-cartao:focus-visible {
+    transform: translateY(-3px);
+    border-color: var(--color-secondary-orange);
+    box-shadow: 0 6px 16px var(--shadow-medium);
+    outline: none;
+}
+
+/* --border-medium e não --border-light: esta muda no modo escuro do
+   sistema, e a tela é sempre branca */
+.continente-cartao.indisponivel {
+    border-color: var(--border-medium);
+    color: var(--text-secondary);
+    cursor: not-allowed;
+}
+
+.continente-icone {
+    font-size: 56px;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.continente-cartao.indisponivel .continente-icone {
+    filter: grayscale(1);
+    opacity: 0.6;
+}
+
+.continente-nome {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--color-primary-blue);
+}
+
+.continente-cartao.indisponivel .continente-nome {
+    color: var(--text-secondary);
+}
+
+.continente-descricao {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.continente-etiqueta {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-neutral-white);
+    background-color: var(--color-neutral-gray);
+    border-radius: 999px;
+}
+
+.tela-inicial-rodape {
+    font-size: 12px;
+    color: var(--text-secondary);
 }
 
 /* Tela de carregamento */

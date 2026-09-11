@@ -1,0 +1,7 @@
+<!-- Mapa da Europa para a Ferramenta de Regionalização (CLIC).
+     Cada país é um elemento com id = código ISO 3166-1 alpha-2 em minúsculas
+     (grupos quando o país tem ilhas ou partes separadas); Mônaco, San Marino
+     e Vaticano são círculos, pois não têm forma visível nesta escala. O grupo
+     #lakes reúne os lagos (pintados de azul pelo CSS do app).
+     Derivado de "Europe countries map" (Wikimedia Commons; Júlio Reis, Marian
+     Sigler, Alphathon e outros), CC BY-SA 2.5. -->

@@ -1,27 +1,35 @@
 # 🗺️ Ferramenta de Regionalização - CLIC Geografia
 
-Aplicação web interativa para ensino de regionalização do continente americano usando programação visual com Blockly.
+Aplicação web interativa para ensino de regionalização de continentes usando programação visual com Blockly. A tela inicial escolhe o continente (América, Europa ou Ásia).
 
 ## 📁 Estrutura do Projeto
 
 ```
 📦 ferramente-de-geografia/
-├── 📄 index.html                 # Página principal (app Vue, painéis de dados e mapa)
+├── 📄 index.html                 # Página única: tela inicial e app Vue (painéis de dados, blocos e mapa)
 ├── 📂 src/
+│   ├── 📄 continentes.js        # Catálogo dos continentes (arquivos, coluna inicial, ordem das regiões)
 │   ├── 📂 components/            # Componentes Vue
 │   │   └── BlocklyPanel.js      # Painel de programação visual
 │   ├── 📂 utils/
 │   │   └── ordenacao.js         # Ordenação dos países (tabela e laço)
 │   ├── 📂 assets/
-│   │   ├── 📂 data/             # Dados JSON
-│   │   │   ├── paises_data.json
-│   │   │   └── paises_iso_mapping.json
-│   │   └── 📂 svg/              # Imagens SVG
-│   │       └── america_map.svg
+│   │   ├── 📂 data/             # Dados JSON, um par por continente
+│   │   │   ├── america_paises.json / america_iso.json
+│   │   │   ├── europa_paises.json / europa_iso.json
+│   │   │   └── asia_paises.json / asia_iso.json
+│   │   └── 📂 svg/              # Mapas SVG, um por continente
+│   │       ├── america.svg
+│   │       ├── europa.svg
+│   │       └── asia.svg
 │   └── 📂 styles/
 │       ├── colors.css           # Paleta de cores (variáveis CSS)
 │       └── main.css             # Estilos globais
-└── 📂 [CLIC]/                   # Materiais pedagógicos (PDFs)
+├── 📂 ferramentas/               # Conversores (planilha -> JSON, SVG bruto -> mapa da ferramenta)
+│   ├── converter_tabela.py
+│   ├── converter_mapa.py
+│   └── converter_mapa.js
+└── 📂 fontes/<continente>/       # Arquivos brutos (xlsx, svg) e a configuração da conversão de cada continente
 ```
 
 ## 🛠️ Tecnologias
@@ -42,12 +50,35 @@ Aplicação web interativa para ensino de regionalização do continente america
    ```
    http://localhost:8000
    ```
+   A tela inicial escolhe o continente; `http://localhost:8000/?continente=america` abre a ferramenta direto (link para os alunos).
+
+### Acrescentar um continente
+
+1. `src/assets/svg/<id>.svg` — cada país é um elemento com `id` igual ao código ISO de 2 letras, em minúsculas
+   (grupo `<g>` quando o país tem ilhas; círculo para países sem forma visível). Lagos ficam no grupo `#lakes`.
+2. `src/assets/data/<id>_paises.json` — lista de objetos, uma chave por coluna da tabela, sempre com `"País"`.
+3. `src/assets/data/<id>_iso.json` — nome do país → código ISO.
+4. Entrada em `src/continentes.js` com `disponivel: true`, a coluna inicial, a ordem própria das regiões e (se preciso) os ids a ocultar do mapa.
+
+Os arquivos 1–3 são gerados a partir dos brutos em `fontes/<id>/` (precisa de `openpyxl` e do Google Chrome):
+
+```bash
+python3 ferramentas/converter_tabela.py <id> "fontes/<id>/planilha.xlsx"   # usa fontes/<id>/tabela.config.json
+python3 ferramentas/converter_mapa.py <id> "fontes/<id>/mapa-bruto.svg"    # usa fontes/<id>/mapa.config.js
+```
+
+O conversor de mapa limpa o SVG do Inkscape, renomeia/agrupa os países conforme a configuração, classifica os
+caminhos sem nome em lago (dentro de um país) ou ilha (atribuída ao país mais próximo) e imprime um relatório
+para conferência. As configurações da Europa e da Ásia servem de exemplo.
 
 ## 🎯 Funcionalidades
 
 ### ✅ Implementado
-- Interface com 3 painéis (Dados, Blockly, Mapa)
-- Tabela com 35 países da América
+- Tela inicial de escolha do continente (cartões; continentes ainda sem dados aparecem "em breve")
+- Interface com 3 painéis (Dados, Blockly, Mapa); botão com o nome do continente volta à tela inicial
+- Tabela com 35 países da América, 50 da Europa e 50 da Ásia (cada continente com as suas colunas).
+  Países sem forma visível no mapa aparecem como pontos: Mônaco, San Marino e Vaticano na Europa;
+  Singapura e Timor-Leste na Ásia. Taiwan, a Caxemira e territórios fora da tabela ficam cinza.
 - **Um workspace por coluna da tabela**: o dropdown "Visualizar coluna" escolhe
   qual regionalização está sendo editada; os blocos de cada coluna ficam
   guardados (em memória) ao trocar de coluna, permitindo várias
@@ -64,8 +95,9 @@ Aplicação web interativa para ensino de regionalização do continente america
 - Botão Parar / Resetar
 
 - Baixar/abrir projeto: botões no painel Blockly salvam em um `.json` os
-  blocos de todas as colunas, a ordenação de cada uma e a coluna em exibição,
-  e reabrem esse arquivo depois (ou em outro computador).
+  blocos de todas as colunas, a ordenação de cada uma, a coluna em exibição
+  e o continente, e reabrem esse arquivo depois (ou em outro computador).
+  Abrir um projeto de outro continente troca de continente antes de abrir.
 
 ### 🔜 Próximas features
 - Persistência automática no navegador (localStorage)

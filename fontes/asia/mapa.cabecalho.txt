@@ -1,0 +1,7 @@
+<!-- Mapa da Ásia para a Ferramenta de Regionalização (CLIC).
+     Cada país é um elemento com id = código ISO 3166-1 alpha-2 em minúsculas
+     (grupos quando o país tem ilhas ou partes separadas); Singapura e
+     Timor-Leste são círculos, pois não têm forma própria neste desenho. O
+     grupo #lakes reúne os lagos (pintados de azul pelo CSS do app).
+     Derivado de um mapa da Ásia em tons de cinza editado no Inkscape
+     (fontes/asia). -->

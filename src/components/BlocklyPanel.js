@@ -34,10 +34,13 @@ export default {
     // coluna: a coluna da tabela selecionada no DadosPanel. Cada coluna tem
     // o seu próprio workspace (uma regionalização por coluna); ao trocar a
     // coluna o painel guarda os blocos da anterior e mostra os da nova.
-    props: ['paises', 'coluna'],
+    // continente: entrada de src/continentes.js, para o botão de voltar
+    // à tela inicial (mostra o continente atual).
+    props: ['paises', 'coluna', 'continente'],
     // baixar-projeto / abrir-projeto: os botões ficam aqui, mas quem monta
-    // e aplica o arquivo é o App (que também guarda a ordenação e a coluna)
-    emits: ['baixar-projeto', 'abrir-projeto'],
+    // e aplica o arquivo é o App (que também guarda a ordenação e a coluna).
+    // trocar-continente: botão de voltar à tela inicial (o App decide).
+    emits: ['baixar-projeto', 'abrir-projeto', 'trocar-continente'],
     data() {
         return {
             // markRaw ao atribuir: o workspace do Blockly NAO pode virar
@@ -61,6 +64,7 @@ export default {
     template: `
         <div class="panel blockly-panel">
             <div class="painel-cabecalho blockly-titulo">
+                <button class="btn-contorno btn-continentes" @click="$emit('trocar-continente')" title="Voltar à escolha de continente">{{ continente.icone }} {{ continente.nome }}</button>
                 <span class="blockly-titulo-texto">Regionalização por: <strong>{{ rotulo }}</strong></span>
                 <span class="projeto-botoes">
                     <button class="btn-contorno" @click="$emit('baixar-projeto')" title="Salva os blocos de todas as colunas em um arquivo .json">💾 Baixar projeto</button>
@@ -347,18 +351,23 @@ export default {
                 }
             };
 
+            // Valor numérico do país na coluna do workspace. Valores ausentes
+            // (null, ex.: IDH do Vaticano) viram NaN, que é falso em toda
+            // comparação; sem isso null < 5 seria verdadeiro (null vira 0)
+            const valorNumerico = (coluna) => `Number(window.paisAtual[${coluna}] ?? NaN)`;
+
             Blockly.JavaScript['se_maior'] = function(block) {
                 const coluna = JSON.stringify(colunaAtual());
                 const valor = Number(block.getFieldValue('VALOR'));
                 const corpo = Blockly.JavaScript.statementToCode(block, 'DO');
-                return `if (window.paisAtual[${coluna}] > ${valor}) {\n${corpo}}\n`;
+                return `if (${valorNumerico(coluna)} > ${valor}) {\n${corpo}}\n`;
             };
 
             Blockly.JavaScript['se_menor'] = function(block) {
                 const coluna = JSON.stringify(colunaAtual());
                 const valor = Number(block.getFieldValue('VALOR'));
                 const corpo = Blockly.JavaScript.statementToCode(block, 'DO');
-                return `if (window.paisAtual[${coluna}] < ${valor}) {\n${corpo}}\n`;
+                return `if (${valorNumerico(coluna)} < ${valor}) {\n${corpo}}\n`;
             };
 
             // Funciona mesmo se o aluno digitar os limites na ordem inversa
@@ -368,7 +377,8 @@ export default {
                 const v2 = Number(block.getFieldValue('VALOR2'));
                 const min = Math.min(v1, v2), max = Math.max(v1, v2);
                 const corpo = Blockly.JavaScript.statementToCode(block, 'DO');
-                return `if (window.paisAtual[${coluna}] >= ${min} && window.paisAtual[${coluna}] <= ${max}) {\n${corpo}}\n`;
+                const v = valorNumerico(coluna);
+                return `if (${v} >= ${min} && ${v} <= ${max}) {\n${corpo}}\n`;
             };
 
             // Criar workspace
