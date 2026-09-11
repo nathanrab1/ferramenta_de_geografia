@@ -1,3 +1,8 @@
+/* Estilos do app. As cores vêm das variáveis de colors.css:
+   azul-escuro (--color-primary-blue) para a estrutura (cabeçalhos, bordas,
+   foco), coral (--color-secondary-orange) para o destaque de interação,
+   verde e bordô da paleta para os botões de executar e resetar. */
+
 * {
     margin: 0;
     padding: 0;
@@ -5,10 +10,11 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     background-color: var(--bg-primary);
     overflow: hidden;
     color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
 }
 
 #app {
@@ -37,11 +43,11 @@ body {
 }
 
 .resizer:hover {
-    background-color: var(--accent-orange);
+    background-color: var(--color-secondary-teal);
 }
 
 .resizer:active {
-    background-color: var(--color-secondary-orange);
+    background-color: var(--color-primary-blue);
 }
 
 .resizer::before {
@@ -53,12 +59,55 @@ body {
     bottom: 0;
 }
 
+/* Cabeçalho comum dos painéis (seletor de coluna e título do Blockly):
+   faixa branca com uma linha azul embaixo */
+.painel-cabecalho {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    min-height: 52px;
+    padding: 8px 16px;
+    font-size: 14px;
+    color: var(--color-neutral-black);
+    background-color: var(--color-neutral-white);
+    border-bottom: 2px solid var(--color-primary-blue);
+}
+
+/* Botões de contorno (abrir/baixar projeto): azul, preenchem no hover */
+.btn-contorno {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--color-primary-blue);
+    background-color: var(--color-neutral-white);
+    border: 2px solid var(--color-primary-blue);
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+}
+
+.btn-contorno:hover {
+    background-color: var(--color-primary-blue);
+    color: var(--text-light);
+    box-shadow: 0 2px 6px var(--shadow-light);
+}
+
+.btn-contorno:focus-visible {
+    outline: 2px solid var(--color-secondary-teal);
+    outline-offset: 2px;
+}
+
 /* Painel de Dados */
 .dados-panel {
     background-color: var(--color-neutral-white);
-    /* Fundo sempre branco: a cor do texto não pode seguir o modo escuro */
+    /* Fundo sempre branco: a cor do texto não pode seguir o modo escuro
+       (--bg-primary e --text-primary mudam no modo escuro, então dentro
+       dos painéis brancos as cores são fixas) */
     color: var(--color-neutral-black);
-    padding: 20px;
     min-width: 200px;
     /* Só a tabela rola (.tabela-scroll); o seletor de coluna fica
        parado em cima e o cabeçalho da tabela gruda no topo da rolagem */
@@ -71,21 +120,16 @@ body {
     flex: 1;
     min-height: 0;
     overflow: auto;
+    padding: 16px;
 }
 
 /* Seletor da coluna exibida na tabela */
-.coluna-seletor {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 15px;
-}
-
 .coluna-seletor label {
-    font-weight: bold;
-    font-size: 14px;
-    color: var(--color-neutral-black);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary);
 }
 
 .coluna-seletor select {
@@ -94,39 +138,77 @@ body {
     padding: 6px 10px;
     font-size: 14px;
     font-weight: 600;
-    border-radius: 5px;
-    border: 2px solid var(--accent-orange);
+    font-family: inherit;
+    border-radius: 6px;
+    border: 2px solid var(--color-primary-blue);
     background-color: var(--color-neutral-white);
-    color: var(--color-neutral-black);
+    color: var(--color-primary-blue);
     cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.coluna-seletor select:hover {
+    border-color: var(--color-secondary-orange);
 }
 
 .coluna-seletor select:focus {
-    outline: 2px solid var(--color-secondary-orange);
-    outline-offset: 2px;
+    outline: none;
+    border-color: var(--color-secondary-orange);
+    box-shadow: 0 0 0 3px rgba(216, 117, 80, 0.25);
 }
 
 .dados-table {
-    border-collapse: collapse;
-    font-size: 12px;
-    background-color: white;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+    background-color: var(--color-neutral-white);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
 .dados-table thead {
-    background-color: var(--accent-orange);
-    color: var(--text-light);
     position: sticky;
     top: 0;
     z-index: 10;
 }
 
-.dados-table th,
-.dados-table td {
-    padding: 8px;
+.dados-table th {
+    background-color: var(--color-primary-blue);
+    color: var(--text-light);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 10px 12px;
     text-align: left;
-    border: 1px solid #ddd;
-    color: #000;
-    font-weight: 500;
+    /* Bordas nas células, não na tabela: com border-collapse o sticky
+       perderia a linha de baixo do cabeçalho ao rolar */
+    border-bottom: 2px solid var(--color-secondary-orange);
+}
+
+.dados-table th + th {
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dados-table td {
+    padding: 8px 12px;
+    text-align: left;
+    color: var(--color-neutral-black);
+    border-bottom: 1px solid var(--border-light);
+    transition: background-color 0.1s;
+}
+
+.dados-table td + td {
+    border-left: 1px solid var(--border-light);
+}
+
+.dados-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.dados-table td strong {
+    font-weight: 600;
 }
 
 /* Colunas ajustadas ao maior valor: a tabela ocupa só o espaço
@@ -144,39 +226,46 @@ body {
 .dados-table th.ordenavel {
     cursor: pointer;
     user-select: none;
+    transition: background-color 0.15s;
 }
 
 .dados-table th.ordenavel:hover {
-    background-color: var(--color-secondary-orange);
+    background-color: var(--color-secondary-teal);
 }
 
 .dados-table th .seta {
     display: inline-block;
     font-size: 10px;
     opacity: 0.4;
+    margin-left: 2px;
 }
 
 .dados-table th.ativa .seta {
     opacity: 1;
 }
 
+.dados-table th.ativa {
+    background-color: #4d6b8f;
+}
+
 /* Valores numéricos alinhados à direita (casas decimais alinhadas) */
 .dados-table .numerico {
     text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 
-.dados-table tbody tr:nth-child(even) {
-    background-color: #f9f9f9;
+.dados-table tbody tr:nth-child(even) td {
+    background-color: #F5F5F5; /* fixo: --bg-primary escurece no modo escuro */
 }
 
-.dados-table tbody tr:hover {
-    background-color: #fff3cd;
+.dados-table tbody tr:hover td {
+    background-color: var(--color-neutral-beige);
     cursor: pointer;
 }
 
 /* Painel Blockly */
 .blockly-panel {
-    background-color: #f9f9f9;
+    background-color: #F5F5F5; /* fixo, igual ao fundo do workspace (temaClic) */
     position: relative;
     min-width: 200px;
     overflow: hidden;
@@ -185,49 +274,24 @@ body {
 }
 
 /* Cabeçalho do painel: coluna do workspace em exibição à esquerda e
-   botões de baixar/abrir projeto à direita */
-.blockly-titulo {
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px 12px;
-    padding: 8px 15px;
-    font-size: 14px;
-    color: var(--color-neutral-black);
-    background-color: var(--color-neutral-white);
-    border-bottom: 2px solid var(--accent-orange);
-}
-
+   botões de baixar/abrir projeto à direita (estilo em .painel-cabecalho) */
 .blockly-titulo-texto {
     flex: 1;
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--text-secondary);
+}
+
+.blockly-titulo-texto strong {
+    color: var(--color-primary-blue);
 }
 
 .projeto-botoes {
     display: flex;
     gap: 6px;
     margin-left: auto;
-}
-
-.projeto-btn {
-    padding: 5px 10px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--color-neutral-black);
-    background-color: var(--color-neutral-white);
-    border: 2px solid var(--accent-orange);
-    border-radius: 5px;
-    cursor: pointer;
-    white-space: nowrap;
-}
-
-.projeto-btn:hover {
-    background-color: var(--accent-orange);
-    color: var(--text-light);
 }
 
 .blockly-workspace {
@@ -241,7 +305,7 @@ body {
 .blocklyColourTable > tr > td {
     width: 30px;
     height: 30px;
-    border: 1px solid #888;
+    border: 1px solid var(--border-dark);
 }
 
 /* Rodape do painel do mapa: botoes e slider de velocidade, abaixo do mapa */
@@ -252,69 +316,83 @@ body {
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
-    padding: 10px 12px;
-    border-top: 1px solid var(--border-medium);
-    background-color: #fff;
+    padding: 12px 16px;
+    border-top: 2px solid var(--color-primary-blue);
+    background-color: var(--color-neutral-white);
 }
 
 .execute-btn,
 .reset-btn {
     color: var(--text-light);
     border: none;
-    padding: 15px 30px;
-    font-size: 16px;
-    font-weight: bold;
-    border-radius: 5px;
+    padding: 12px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 4px 6px var(--shadow-light);
-    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px var(--shadow-light);
+    transition: background-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
 .execute-btn:hover,
 .reset-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 8px var(--shadow-medium);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--shadow-medium);
+}
+
+.execute-btn:active,
+.reset-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px var(--shadow-light);
+}
+
+.execute-btn:focus-visible,
+.reset-btn:focus-visible {
+    outline: 2px solid var(--color-primary-blue);
+    outline-offset: 2px;
 }
 
 .execute-btn {
-    background-color: var(--accent-green);
+    background-color: var(--color-primary-green);
 }
 
 .execute-btn:hover {
-    background-color: var(--success);
+    background-color: #4f9160;
 }
 
 .reset-btn {
-    background-color: #c0392b;
+    background-color: var(--color-primary-red);
 }
 
 .reset-btn:hover {
-    background-color: #e74c3c;
+    background-color: #874040;
 }
 
 .velocidade-ctrl {
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 0 15px;
+    padding: 6px 12px;
     margin-left: auto;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 4px 6px var(--shadow-light);
+    background-color: var(--color-neutral-white);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
     font-size: 16px;
     user-select: none;
 }
 
 .velocidade-ctrl input[type="range"] {
     width: 120px;
-    accent-color: var(--accent-orange);
+    accent-color: var(--color-primary-blue);
     cursor: pointer;
 }
 
 .velocidade-valor {
     min-width: 62px;
     font-size: 13px;
-    font-weight: bold;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     /* fundo branco fixo: cor fixa (veja .mapa-legenda) */
     color: var(--color-neutral-black);
     text-align: right;
@@ -339,12 +417,13 @@ body {
     bottom: 20px;
     left: 20px;
     z-index: 1000;
-    background-color: #fff;
+    background-color: var(--color-neutral-white);
     color: var(--color-neutral-black);
-    border: 1px solid var(--border-medium);
-    border-radius: 5px;
-    box-shadow: 0 4px 8px var(--shadow-medium);
-    padding: 10px 14px;
+    border: 1px solid var(--border-light);
+    border-left: 4px solid var(--color-primary-blue);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-medium);
+    padding: 12px 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -354,11 +433,11 @@ body {
 }
 
 .mapa-legenda-titulo {
-    font-size: 13px;
-    font-weight: bold;
-    color: var(--color-neutral-black);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-primary-blue);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.6px;
     margin-bottom: 2px;
 }
 
@@ -375,7 +454,7 @@ body {
     width: 20px;
     height: 20px;
     border-radius: 4px;
-    border: 1px solid var(--color-neutral-dark);
+    border: 1px solid rgba(0, 0, 0, 0.25);
     flex-shrink: 0;
 }
 
@@ -386,10 +465,10 @@ body {
     position: absolute;
     z-index: 1100;
     pointer-events: none;
-    background-color: rgba(44, 44, 44, 0.95);
-    color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px var(--shadow-dark);
+    background-color: rgba(44, 62, 80, 0.95);
+    color: var(--text-light);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px var(--shadow-dark);
     padding: 8px 12px;
     font-size: 14px;
     line-height: 1.4;
@@ -412,13 +491,13 @@ body {
 }
 
 .mapa-tooltip-rotulo {
-    color: var(--color-neutral-gray);
+    color: var(--color-secondary-purple);
 }
 
 /* Painel Mapa */
 .mapa-panel {
-    background-color: #fff;
-    padding: 8px;
+    background-color: var(--color-neutral-white);
+    padding: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -444,10 +523,10 @@ body {
 
 .mapa-svg {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    bottom: 4px;
-    left: 4px;
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -505,4 +584,14 @@ body {
 .mapa-container[style*="cursor: grabbing"] .mapa-svg path,
 .mapa-container[style*="cursor: grabbing"] .mapa-svg g {
     cursor: grabbing !important;
+}
+
+/* Tela de carregamento */
+.carregando {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-weight: 500;
 }

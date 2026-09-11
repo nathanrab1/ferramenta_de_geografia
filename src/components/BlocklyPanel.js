@@ -2,6 +2,31 @@ import { compararValores } from '../utils/ordenacao.js';
 
 const { markRaw } = Vue;
 
+// Tema do workspace com as cores do app (colors.css): fundo do painel
+// em cinza-claro, biblioteca de blocos em branco e marcadores em
+// azul-escuro. As cores dos blocos ficam em cada bloco (setColour).
+let temaClicCache = null;
+function temaClic() {
+    if (!temaClicCache) {
+        temaClicCache = Blockly.Theme.defineTheme('clic', {
+            base: Blockly.Themes.Classic,
+            componentStyles: {
+                workspaceBackgroundColour: '#F5F5F5',
+                toolboxBackgroundColour: '#FFFFFF',
+                flyoutBackgroundColour: '#FFFFFF',
+                flyoutOpacity: 1,
+                scrollbarColour: '#A8A8A8',
+                scrollbarOpacity: 0.5,
+                insertionMarkerColour: '#405B7C',
+                insertionMarkerOpacity: 0.3,
+                markerColour: '#405B7C',
+                cursorColour: '#D87550'
+            }
+        });
+    }
+    return temaClicCache;
+}
+
 export default {
     name: 'BlocklyPanel',
     // paises: já na ordem da tabela; é a ordem em que o laço "para cada
@@ -35,11 +60,11 @@ export default {
     },
     template: `
         <div class="panel blockly-panel">
-            <div class="blockly-titulo">
+            <div class="painel-cabecalho blockly-titulo">
                 <span class="blockly-titulo-texto">Regionalização por: <strong>{{ rotulo }}</strong></span>
                 <span class="projeto-botoes">
-                    <button class="projeto-btn" @click="$emit('baixar-projeto')" title="Salva os blocos de todas as colunas em um arquivo .json">💾 Baixar projeto</button>
-                    <button class="projeto-btn" @click="$refs.arquivo.click()" title="Carrega um arquivo .json salvo com o botão Baixar">📂 Abrir projeto</button>
+                    <button class="btn-contorno" @click="$emit('baixar-projeto')" title="Salva os blocos de todas as colunas em um arquivo .json">💾 Baixar projeto</button>
+                    <button class="btn-contorno" @click="$refs.arquivo.click()" title="Carrega um arquivo .json salvo com o botão Baixar">📂 Abrir projeto</button>
                     <input type="file" accept=".json,application/json" ref="arquivo" hidden @change="escolherArquivo">
                 </span>
             </div>
@@ -134,6 +159,11 @@ export default {
                 '#fbdafb', '#f9a2f9', '#da6cda', '#da3cda', '#aa3caa', '#6c2c6c', '#3c0c3c'
             ];
             const PALETA_COLUNAS = 7;
+            // Cores dos blocos, iguais às dos blocos dos outros apps do
+            // CLIC: laço em azul, "pintar" em amarelo e os "se" em laranja
+            const COR_BLOCO_LACO = '#5369AB';
+            const COR_BLOCO_PINTAR = '#E3C15E';
+            const COR_BLOCO_SE = '#C8613D';
             const COR_INICIAL = '#e83c2c'; // vermelho
 
             // Definir bloco de início do programa: um bloco "C" (loop)
@@ -146,7 +176,7 @@ export default {
                     this.appendStatementInput("DO");
                     this.appendDummyInput()
                         .appendField("↻");
-                    this.setColour(180);
+                    this.setColour(COR_BLOCO_LACO);
                     this.setTooltip("Executa os blocos internos uma vez para cada país");
                     this.setDeletable(false); // Não pode ser deletado
                 }
@@ -184,7 +214,7 @@ export default {
                         .appendField(campoCor, "COR");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
-                    this.setColour(160);
+                    this.setColour(COR_BLOCO_PINTAR);
                     this.setTooltip("Pinta o país atual do laço com a cor escolhida");
                 }
             };
@@ -227,7 +257,7 @@ export default {
                         .appendField("então");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
-                    this.setColour(210);
+                    this.setColour(COR_BLOCO_SE);
                     this.setTooltip("Executa os blocos internos apenas se o país atual tiver esse valor na coluna");
                 }
             };
@@ -276,7 +306,7 @@ export default {
                         .appendField("então");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
-                    this.setColour(210);
+                    this.setColour(COR_BLOCO_SE);
                     this.setTooltip("Executa os blocos internos apenas se o país atual tiver, nessa coluna, um valor maior que o digitado");
                 }
             };
@@ -293,7 +323,7 @@ export default {
                         .appendField("então");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
-                    this.setColour(210);
+                    this.setColour(COR_BLOCO_SE);
                     this.setTooltip("Executa os blocos internos apenas se o país atual tiver, nessa coluna, um valor menor que o digitado");
                 }
             };
@@ -312,7 +342,7 @@ export default {
                         .appendField("então");
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
-                    this.setColour(210);
+                    this.setColour(COR_BLOCO_SE);
                     this.setTooltip("Executa os blocos internos apenas se o país atual tiver, nessa coluna, um valor entre os dois digitados (limites inclusos)");
                 }
             };
@@ -386,9 +416,10 @@ export default {
                 grid: {
                     spacing: 20,
                     length: 3,
-                    colour: '#ccc',
+                    colour: '#d5d5d5',
                     snap: true
-                }
+                },
+                theme: temaClic()
             }));
 
             this.carregarBlocosIniciais();

@@ -7,8 +7,8 @@
 
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
-    <link rel="stylesheet" href="src/styles/colors.css?v=10">
-    <link rel="stylesheet" href="src/styles/main.css?v=10">
+    <link rel="stylesheet" href="src/styles/colors.css?v=11">
+    <link rel="stylesheet" href="src/styles/main.css?v=11">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -26,7 +26,7 @@
         <blockly-panel v-if="!loading" ref="blockly" :paises="paisesOrdenados" :coluna="colunaSelecionada" :style="{ width: panelWidths[1] + 'px' }" @baixar-projeto="baixarProjeto" @abrir-projeto="abrirProjeto"></blockly-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(1, $event)"></div>
         <mapa-panel v-if="!loading" :paises="paises" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
-        <div v-if="loading" style="padding: 20px; text-align: center;">
+        <div v-if="loading" class="carregando">
             <h2>⏳ Carregando...</h2>
         </div>
     </div>
@@ -75,7 +75,7 @@
             },
             template: `
                 <div class="panel dados-panel">
-                    <div class="coluna-seletor">
+                    <div class="painel-cabecalho coluna-seletor">
                         <label for="coluna-select">Visualizar coluna:</label>
                         <select id="coluna-select" :value="coluna" @change="$emit('update:coluna', $event.target.value)">
                             <option v-for="coluna in colunas" :key="coluna" :value="coluna">
@@ -122,7 +122,8 @@
                     this.$nextTick(() => {
                         const tabela = this.$refs.tabela;
                         if (!tabela) return;
-                        const estilo = getComputedStyle(this.$el);
+                        // O padding fica na área de rolagem (.tabela-scroll), não no painel
+                        const estilo = getComputedStyle(tabela.parentElement);
                         const padding = parseFloat(estilo.paddingLeft) + parseFloat(estilo.paddingRight);
                         // Folga para a barra de rolagem vertical do painel
                         this.$emit('largura', Math.ceil(tabela.offsetWidth + padding + 20));
@@ -280,11 +281,24 @@
                     }
                 },
                 handleWheel(event) {
-                    // Calcular novo zoom
                     const delta = event.deltaY > 0 ? -0.1 : 0.1;
-                    const newScale = Math.max(0.5, Math.min(5, this.scale + delta));
+                    const novaEscala = Math.max(0.5, Math.min(5, this.scale + delta));
+                    if (novaEscala === this.scale) return;
 
-                    this.scale = newScale;
+                    // Zoom centrado no cursor: o ponto do mapa sob o mouse
+                    // continua sob o mouse depois da mudança de escala.
+                    // O transform é translate(t) scale(s) com origem no
+                    // centro C do container, então um ponto p do mapa vai
+                    // parar em C + t + s*(p - C). Mantendo M = C + t + s*(p - C)
+                    // para a nova escala s', a translação vira
+                    // t' = (M - C) - (s'/s) * (M - C - t).
+                    const caixa = event.currentTarget.getBoundingClientRect();
+                    const mx = event.clientX - caixa.left - caixa.width / 2;
+                    const my = event.clientY - caixa.top - caixa.height / 2;
+                    const razao = novaEscala / this.scale;
+                    this.translateX = mx - razao * (mx - this.translateX);
+                    this.translateY = my - razao * (my - this.translateY);
+                    this.scale = novaEscala;
                 },
                 // O arquivo de origem e um mapa-mundi recortado, entao ainda traz
                 // territorios que nao fazem parte das Americas.
