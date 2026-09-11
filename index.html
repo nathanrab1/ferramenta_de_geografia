@@ -7,8 +7,8 @@
 
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
-    <link rel="stylesheet" href="src/styles/colors.css?v=6">
-    <link rel="stylesheet" href="src/styles/main.css?v=6">
+    <link rel="stylesheet" href="src/styles/colors.css?v=7">
+    <link rel="stylesheet" href="src/styles/main.css?v=7">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -21,9 +21,9 @@
 </head>
 <body>
     <div id="app">
-        <dados-panel v-if="!loading" :paises="paises" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
+        <dados-panel v-if="!loading" :paises="paises" v-model:coluna="colunaSelecionada" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(0, $event)"></div>
-        <blockly-panel v-if="!loading" :paises="paises" :style="{ width: panelWidths[1] + 'px' }"></blockly-panel>
+        <blockly-panel v-if="!loading" :paises="paises" :coluna="colunaSelecionada" :style="{ width: panelWidths[1] + 'px' }"></blockly-panel>
         <div v-if="!loading" class="resizer" @mousedown="startResize(1, $event)"></div>
         <mapa-panel v-if="!loading" :paises="paises" :paises-iso-mapping="paisesISOMapping"></mapa-panel>
         <div v-if="loading" style="padding: 20px; text-align: center;">
@@ -40,17 +40,14 @@
         // Componente: DadosPanel
         const DadosPanel = {
             name: 'DadosPanel',
-            props: ['paises'],
-            emits: ['largura'],
-            data() {
-                return {
-                    colunaSelecionada: 'Região'
-                };
-            },
+            // coluna: a coluna exibida na tabela. Fica no App (v-model)
+            // porque também define qual workspace o BlocklyPanel mostra
+            props: ['paises', 'coluna'],
+            emits: ['largura', 'update:coluna'],
             watch: {
                 // Ao trocar a coluna (ou carregar os dados), avisa o App a
                 // largura que a tabela precisa para o painel se ajustar
-                colunaSelecionada: 'emitirLargura',
+                coluna: 'emitirLargura',
                 paises: 'emitirLargura'
             },
             mounted() {
@@ -66,14 +63,14 @@
                 },
                 // Colunas numéricas são alinhadas à direita
                 colunaNumerica() {
-                    return this.paises.some(p => typeof p[this.colunaSelecionada] === 'number');
+                    return this.paises.some(p => typeof p[this.coluna] === 'number');
                 }
             },
             template: `
                 <div class="panel dados-panel">
                     <div class="coluna-seletor">
                         <label for="coluna-select">Visualizar coluna:</label>
-                        <select id="coluna-select" v-model="colunaSelecionada">
+                        <select id="coluna-select" :value="coluna" @change="$emit('update:coluna', $event.target.value)">
                             <option v-for="coluna in colunas" :key="coluna" :value="coluna">
                                 {{ coluna }}
                             </option>
@@ -84,13 +81,13 @@
                             <thead>
                                 <tr>
                                     <th>País</th>
-                                    <th :class="{ numerico: colunaNumerica }">{{ colunaSelecionada }}</th>
+                                    <th :class="{ numerico: colunaNumerica }">{{ coluna }}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="pais in paises" :key="pais['País']">
                                     <td><strong>{{ pais['País'] }}</strong></td>
-                                    <td :class="{ numerico: colunaNumerica }">{{ formatarValor(pais[colunaSelecionada], colunaSelecionada) }}</td>
+                                    <td :class="{ numerico: colunaNumerica }">{{ formatarValor(pais[coluna], coluna) }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -213,6 +210,8 @@
             async mounted() {
                 await this.carregarMapa();
                 window.pintarPais = this.pintarPais;
+                // Chamado pelo App ao trocar a coluna da tabela
+                window.resetarMapa = this.resetarMapa;
                 window.intervaloPintura = this.intervaloMs;
                 window.atualizarLegenda = (itens, colunas = []) => {
                     this.legenda = itens;
@@ -519,6 +518,10 @@
                     paises: [],
                     paisesISOMapping: {},
                     loading: true,
+                    // Coluna da tabela em exibição. Cada coluna tem o seu
+                    // próprio workspace no BlocklyPanel (uma regionalização
+                    // por coluna)
+                    colunaSelecionada: 'Região',
                     panelWidths: [
                         300,  // Painel de dados mais estreito
                         window.innerWidth / 3
@@ -528,6 +531,14 @@
                     startX: 0,
                     startWidth: 0
                 };
+            },
+            watch: {
+                // Ao trocar a coluna, o mapa mostrava a regionalização de
+                // outro workspace: volta ao cinza (e para a execução) até o
+                // aluno executar o programa da nova coluna
+                colunaSelecionada() {
+                    if (window.resetarMapa) window.resetarMapa();
+                }
             },
             async mounted() {
                 await this.carregarDados();

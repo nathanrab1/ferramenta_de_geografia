@@ -46,16 +46,19 @@ Aplicação web interativa para ensino de regionalização do continente america
 ### ✅ Implementado
 - Interface com 3 painéis (Dados, Blockly, Mapa)
 - Tabela com 35 países da América
-- Bloco Blockly "Pintar país de cor"
-- Visualização do mapa SVG das Américas
-- Sistema de pintura de países
+- **Um workspace por coluna da tabela**: o dropdown "Visualizar coluna" escolhe
+  qual regionalização está sendo editada; os blocos de cada coluna ficam
+  guardados (em memória) ao trocar de coluna, permitindo várias
+  regionalizações no mesmo projeto. Ao trocar de coluna o mapa é limpo.
+- Biblioteca de blocos conforme o tipo da coluna: sempre "Pintar", mais
+  "se coluna = valor" (colunas de texto) ou "se >", "se <", "se entre"
+  (colunas numéricas). A coluna dos blocos "se" é fixa (a do workspace).
+- Bloco de iteração "para cada país" com animação de varredura e slider de velocidade
+- Legenda automática e tooltip do mapa com os valores da coluna
+- Botão Parar / Resetar
 
 ### 🔜 Próximas features
-- Blocos condicionais (se/então)
-- Blocos de iteração (para cada país)
-- Sistema de salvar/carregar projetos
-- Legendas automáticas
-- Botão de reset
+- Salvar/carregar projetos (persistência dos workspaces)
 
 ## 📚 Sequência Didática
 

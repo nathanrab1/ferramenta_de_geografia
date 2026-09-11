@@ -153,6 +153,19 @@ body {
     flex-direction: column;
 }
 
+/* Cabeçalho do painel: coluna do workspace em exibição */
+.blockly-titulo {
+    flex-shrink: 0;
+    padding: 10px 15px;
+    font-size: 14px;
+    color: var(--color-neutral-black);
+    background-color: var(--color-neutral-white);
+    border-bottom: 2px solid var(--accent-orange);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .blockly-workspace {
     flex: 1;
     width: 100%;
