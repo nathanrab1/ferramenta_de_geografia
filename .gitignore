@@ -9,3 +9,6 @@
 .vscode/
 .idea/
 *.swp
+
+# Materiais pedagógicos (não publicar no site)
+jogar_fora/
