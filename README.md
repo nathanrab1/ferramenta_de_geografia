@@ -90,7 +90,7 @@ para conferência. As configurações da Europa e da Ásia servem de exemplo.
   guardados (em memória) ao trocar de coluna, permitindo várias
   regionalizações no mesmo projeto. Ao trocar de coluna o mapa é limpo.
 - Biblioteca de blocos conforme o tipo da coluna: sempre "Pintar", mais
-  "se coluna = valor" (colunas de texto) ou "se >", "se <", "se entre"
+  "se coluna = valor" (colunas de texto) ou "se >", "se <", "se entre", "se ="
   (colunas numéricas). A coluna dos blocos "se" é fixa (a do workspace).
 - Bloco de iteração "para cada país" com animação de varredura e slider de velocidade
 - Tabela ordenável pelos cabeçalhos (nome do país ou valor da coluna,

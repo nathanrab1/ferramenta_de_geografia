@@ -321,7 +321,8 @@ body {
     border: 1px solid var(--border-dark);
 }
 
-/* Rodape do painel do mapa: botoes e slider de velocidade, abaixo do mapa */
+/* Cabecalho do painel do mapa: botoes e slider de velocidade, acima do
+   mapa (alinhado aos cabecalhos dos outros paineis) */
 .mapa-botoes {
     width: 100%;
     flex-shrink: 0;
@@ -330,7 +331,7 @@ body {
     flex-wrap: wrap;
     gap: 10px;
     padding: 12px 16px;
-    border-top: 2px solid var(--color-primary-blue);
+    border-bottom: 2px solid var(--color-primary-blue);
     background-color: var(--color-neutral-white);
 }
 
@@ -412,7 +413,7 @@ body {
 }
 
 /* Area do mapa: referencia (position: relative) para o tooltip e a legenda,
-   que ficam sobre o mapa e nao sobre o rodape de botoes. */
+   que ficam sobre o mapa e nao sobre a barra de botoes. */
 .mapa-area {
     position: relative;
     width: 100%;

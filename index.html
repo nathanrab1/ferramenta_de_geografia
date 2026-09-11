@@ -8,7 +8,7 @@
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
     <link rel="stylesheet" href="src/styles/colors.css?v=13">
-    <link rel="stylesheet" href="src/styles/main.css?v=14">
+    <link rel="stylesheet" href="src/styles/main.css?v=15">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -250,6 +250,16 @@
             },
             template: `
                 <div class="panel mapa-panel">
+                    <div class="mapa-botoes">
+                        <button class="execute-btn" @click="executar">▶️ Executar</button>
+                        <button class="reset-btn" @click="resetarMapa" title="Para a execução e limpa o mapa">⏹️ Parar / Resetar</button>
+                        <label class="velocidade-ctrl" title="Velocidade da pintura">
+                            <span>🐢</span>
+                            <input type="range" min="1" max="10" step="1" v-model.number="velocidade">
+                            <span>🐇</span>
+                            <span class="velocidade-valor">{{ intervaloMs }} ms</span>
+                        </label>
+                    </div>
                     <div class="mapa-area" ref="area">
                         <div
                             class="mapa-container"
@@ -281,16 +291,6 @@
                                 <span class="mapa-legenda-rotulo">{{ item.rotulo }}</span>
                             </div>
                         </div>
-                    </div>
-                    <div class="mapa-botoes">
-                        <button class="execute-btn" @click="executar">▶️ Executar</button>
-                        <button class="reset-btn" @click="resetarMapa" title="Para a execução e limpa o mapa">⏹️ Parar / Resetar</button>
-                        <label class="velocidade-ctrl" title="Velocidade da pintura">
-                            <span>🐢</span>
-                            <input type="range" min="1" max="10" step="1" v-model.number="velocidade">
-                            <span>🐇</span>
-                            <span class="velocidade-valor">{{ intervaloMs }} ms</span>
-                        </label>
                     </div>
                 </div>
             `,

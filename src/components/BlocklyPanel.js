@@ -126,6 +126,7 @@ export default {
             delete Blockly.Blocks['iniciar_programa'];
             delete Blockly.Blocks['pintar'];
             delete Blockly.Blocks['se_atributo'];
+            delete Blockly.Blocks['se_igual'];
             delete Blockly.Blocks['se_maior'];
             delete Blockly.Blocks['se_menor'];
             delete Blockly.Blocks['se_entre'];
@@ -133,6 +134,7 @@ export default {
                 delete Blockly.JavaScript['iniciar_programa'];
                 delete Blockly.JavaScript['pintar'];
                 delete Blockly.JavaScript['se_atributo'];
+                delete Blockly.JavaScript['se_igual'];
                 delete Blockly.JavaScript['se_maior'];
                 delete Blockly.JavaScript['se_menor'];
                 delete Blockly.JavaScript['se_entre'];
@@ -298,6 +300,24 @@ export default {
             }
             Blockly.fieldRegistry.register('field_numero_br', FieldNumeroBR);
 
+            // Bloco "se [coluna] = [valor]" (colunas numéricas; o de texto
+            // é o se_atributo, com dropdown)
+            Blockly.Blocks['se_igual'] = {
+                init: function() {
+                    this.appendDummyInput()
+                        .appendField("se")
+                        .appendField(rotuloColuna(colunaAtual() || ''))
+                        .appendField("=")
+                        .appendField(new FieldNumeroBR(0), "VALOR");
+                    this.appendStatementInput("DO")
+                        .appendField("então");
+                    this.setPreviousStatement(true, null);
+                    this.setNextStatement(true, null);
+                    this.setColour(COR_BLOCO_SE);
+                    this.setTooltip("Executa os blocos internos apenas se o país atual tiver, nessa coluna, exatamente o valor digitado");
+                }
+            };
+
             // Bloco "se [coluna] > [valor]"
             Blockly.Blocks['se_maior'] = {
                 init: function() {
@@ -356,6 +376,13 @@ export default {
             // comparação; sem isso null < 5 seria verdadeiro (null vira 0)
             const valorNumerico = (coluna) => `Number(window.paisAtual[${coluna}] ?? NaN)`;
 
+            Blockly.JavaScript['se_igual'] = function(block) {
+                const coluna = JSON.stringify(colunaAtual());
+                const valor = Number(block.getFieldValue('VALOR'));
+                const corpo = Blockly.JavaScript.statementToCode(block, 'DO');
+                return `if (${valorNumerico(coluna)} === ${valor}) {\n${corpo}}\n`;
+            };
+
             Blockly.JavaScript['se_maior'] = function(block) {
                 const coluna = JSON.stringify(colunaAtual());
                 const valor = Number(block.getFieldValue('VALOR'));
@@ -388,7 +415,7 @@ export default {
         // do tipo da coluna (igualdade para texto, comparações para número)
         toolboxPara(coluna) {
             const blocosSe = this.colunaNumerica(coluna)
-                ? ['se_maior', 'se_menor', 'se_entre']
+                ? ['se_maior', 'se_menor', 'se_entre', 'se_igual']
                 : ['se_atributo'];
             return `<xml>` +
                 ['pintar', ...blocosSe].map(t => `<block type="${t}"></block>`).join('') +
@@ -547,6 +574,8 @@ export default {
                 for (let pai = bloco.getSurroundParent(); pai; pai = pai.getSurroundParent()) {
                     let comparacao = null;
                     if (pai.type === 'se_atributo') {
+                        comparacao = `= ${pai.getFieldValue('VALOR')}`;
+                    } else if (pai.type === 'se_igual') {
                         comparacao = `= ${pai.getFieldValue('VALOR')}`;
                     } else if (pai.type === 'se_maior') {
                         comparacao = `> ${pai.getFieldValue('VALOR')}`;
