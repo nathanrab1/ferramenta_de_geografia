@@ -67,7 +67,8 @@ planilha, compartilha a planilha como "Qualquer pessoa com o link" e cola o link
 um CSV). A pergunta de posição também pode ser uma coluna simples com respostas como "Frente esquerda".
 
 A sala tem seis regiões (três fileiras por dois lados), e cada uma é uma linha da tabela, como um país:
-quantidade de alunos e, para cada pergunta numérica, o total e a média. O laço "para cada região" pinta os
+quantidade de alunos e, para cada pergunta numérica, a soma das respostas ("Quantas canetas...?" vira
+"Número de Canetas"). O laço "para cada região" pinta os
 retângulos de borda arredondada que `src/sala.js` acrescenta, atrás das carteiras, ao desenho da sala
 (`src/assets/svg/sala.svg`). Data/hora, nome e e-mail nunca entram. Quem marca mais de um lugar
 conta só no primeiro (com aviso). "Atualizar respostas" relê a planilha; o projeto baixado guarda as respostas

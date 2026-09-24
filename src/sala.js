@@ -3,8 +3,8 @@
 // "qualquer pessoa com o link"). A sala tem seis regiões, três fileiras
 // (frente, centro, fundo) por dois lados (esquerda, direita), e cada
 // região é uma linha da tabela, como um país: quantos alunos sentam nela
-// e, para cada pergunta numérica do formulário, o total e a média das
-// respostas desses alunos. O mapa é o desenho da sala (src/assets/svg/
+// e, para cada pergunta numérica do formulário, a soma das respostas
+// desses alunos. O mapa é o desenho da sala (src/assets/svg/
 // sala.svg) com um retângulo por região acrescentado por cima.
 //
 // Para reaproveitar a tabela, os blocos e o mapa dos continentes, cada
@@ -211,9 +211,19 @@ export function detectarPerguntaPosicao(tabela) {
     return melhor;
 }
 
+// Nome da coluna com a soma de uma pergunta numérica: "Quantas canetas
+// você tem no estojo?" vira "Número de Canetas"; perguntas em outro
+// formato ficam com o próprio título
+function nomeDaSoma(pergunta) {
+    const coisa = pergunta.match(/^quant[oa]s\s+(\S+)/i);
+    if (!coisa) return pergunta;
+    const palavra = coisa[1].replace(/[?.,:;!]+$/, '');
+    return `Número de ${palavra[0].toUpperCase()}${palavra.slice(1).toLowerCase()}`;
+}
+
 // Tabela das regiões: uma linha por região (todas as seis, mesmo vazias)
 // com a quantidade de alunos e, para cada pergunta numérica (todas as
-// respostas preenchidas são números), o total e a média. Devolve também
+// respostas preenchidas são números), a soma das respostas. Devolve também
 // os avisos para a configuração: quantos marcaram mais de um lugar e
 // quantos não têm posição (esses ficam fora das regiões).
 export function montarRegioes(tabela, nomePergunta) {
@@ -238,16 +248,13 @@ export function montarRegioes(tabela, nomePergunta) {
         const alunos = alunosPorRegiao.get(regiao);
         const linha = { [CHAVE_NOME]: regiao.nome, [COLUNA_QUANTIDADE]: alunos.length };
         for (const p of numericas) {
-            const valores = alunos.map(r => paraNumero(r[p.colunas[0].indice] || '')).filter(v => v !== null);
-            const total = valores.reduce((a, b) => a + b, 0);
-            linha[`${p.nome} (total)`] = total;
-            // Média com uma casa; sem respostas, fica vazia (-)
-            linha[`${p.nome} (média)`] = valores.length ? Math.round(total / valores.length * 10) / 10 : null;
+            linha[nomeDaSoma(p.nome)] = alunos
+                .map(r => paraNumero(r[p.colunas[0].indice] || '') ?? 0)
+                .reduce((a, b) => a + b, 0);
         }
         return linha;
     });
-    const medias = numericas.map(p => `${p.nome} (média)`);
-    return { regioes, medias, avisos: { varias, semPosicao } };
+    return { regioes, avisos: { varias, semPosicao } };
 }
 
 // Retângulos das regiões sobre o desenho da sala (src/assets/svg/sala.svg,
