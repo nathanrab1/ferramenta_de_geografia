@@ -78,12 +78,6 @@ export default {
     watch: {
         coluna(nova, anterior) {
             if (this.workspace) this.trocarWorkspace(nova, anterior);
-        },
-        // Reordenar a tabela muda a ordem da pintura, mas só a partir da
-        // próxima execução: o laço em andamento guarda a lista com que
-        // começou (veja iniciar_programa)
-        paises(lista) {
-            window.paises = lista;
         }
     },
     mounted() {
@@ -97,15 +91,6 @@ export default {
                 Blockly.svgResize(this.workspace);
             }
         };
-
-        // Expor execução globalmente: o botão "Executar" fica no MapaPanel
-        window.executarCodigo = () => this.executarCodigo();
-
-        // Cancela o laço em andamento: cada execução guarda o id com que
-        // começou e para assim que o id global muda (veja iniciar_programa).
-        // Usado pelo botão "Resetar" e ao iniciar uma nova execução.
-        window.execucaoId = 0;
-        window.pararExecucao = () => { window.execucaoId++; };
     },
     methods: {
         // Rótulo da coluna nos blocos e no título: nome em minúsculas
@@ -118,8 +103,6 @@ export default {
             return this.paises.some(p => typeof p[coluna] === 'number');
         },
         inicializarBlockly() {
-            // Lista usada pelo loop do bloco "para cada país" no código gerado
-            window.paises = this.paises;
             this.colunaAtual = this.coluna;
 
             // Limpar definições anteriores se existirem
@@ -189,24 +172,28 @@ export default {
             };
 
             // Gerador de código para o bloco inicial: envolve os blocos
-            // internos em um loop sobre a lista de países. O loop é
-            // assíncrono com uma pausa por país, para dar para ver a
-            // varredura acontecendo no mapa em ordem. A pausa é lida a cada
-            // iteração de window.intervaloPintura (slider do MapaPanel).
-            // A cada país o laço confere se ainda é a execução atual
-            // (window.pararExecucao invalida o id e encerra o laço).
+            // internos em um loop sobre a lista de países. O código gerado
+            // é uma função assíncrona que recebe o mapa onde vai pintar
+            // (veja MapaPanel.rodar): dele vêm a lista de países (na ordem
+            // da tabela daquela coluna), o pintarPais, a espera entre
+            // países (pausa do slider de velocidade e, se o aluno pausou,
+            // até ele continuar) e o id da execução atual. A cada país o
+            // laço confere se ainda é a execução atual (parar/resetar
+            // troca o id e encerra o laço) e avisa o mapa qual país está
+            // visitando (destaque na tabela). Sem globais, dois mapas podem
+            // rodar programas ao mesmo tempo.
             Blockly.JavaScript['iniciar_programa'] = function(block) {
                 const corpo = Blockly.JavaScript.statementToCode(block, 'DO');
                 if (!corpo.trim()) return '';
-                return `(async () => {\n` +
-                       `  const execucaoId = window.execucaoId;\n` +
-                       `  for (const paisAtual of window.paises) {\n` +
-                       `    if (window.execucaoId !== execucaoId) break;\n` +
-                       `    window.paisAtual = paisAtual;\n` +
+                return `(async (mapa) => {\n` +
+                       `  const execucaoId = mapa.execucaoId;\n` +
+                       `  for (const paisAtual of mapa.paises) {\n` +
+                       `    if (mapa.execucaoId !== execucaoId) break;\n` +
+                       `    mapa.visitar(paisAtual);\n` +
                        corpo +
-                       `    await new Promise(r => setTimeout(r, window.intervaloPintura ?? 150));\n` +
+                       `    await mapa.esperar();\n` +
                        `  }\n` +
-                       `})()`;
+                       `})`;
             };
 
             // Bloco "Pintar [cor]": pinta o país atual do laço
@@ -227,13 +214,15 @@ export default {
 
             Blockly.JavaScript['pintar'] = function(block) {
                 const cor = block.getFieldValue('COR');
-                return `window.pintarPais(window.paisAtual['País'], '${cor}');\n`;
+                return `mapa.pintarPais(paisAtual['País'], '${cor}');\n`;
             };
 
             // Os blocos "se" não têm dropdown de coluna: a coluna é a do
             // workspace em exibição. Os blocos só são criados (pela
             // biblioteca ou ao restaurar o estado guardado) enquanto a sua
-            // coluna está ativa, então a leitura na criação é segura.
+            // coluna está ativa, então a leitura na criação é segura
+            // (programaDaColuna também garante isso ao gerar código de
+            // outra coluna).
             const panel = this;
             const colunaAtual = () => panel.colunaAtual;
             const rotuloColuna = (coluna) => panel.rotuloColuna(coluna);
@@ -272,7 +261,7 @@ export default {
                 const coluna = JSON.stringify(colunaAtual());
                 const valor = JSON.stringify(block.getFieldValue('VALOR'));
                 const corpo = Blockly.JavaScript.statementToCode(block, 'DO');
-                return `if (window.paisAtual[${coluna}] === ${valor}) {\n${corpo}}\n`;
+                return `if (paisAtual[${coluna}] === ${valor}) {\n${corpo}}\n`;
             };
 
             // Campo numérico em formato brasileiro: mostra e aceita vírgula
@@ -374,7 +363,7 @@ export default {
             // Valor numérico do país na coluna do workspace. Valores ausentes
             // (null, ex.: IDH do Vaticano) viram NaN, que é falso em toda
             // comparação; sem isso null < 5 seria verdadeiro (null vira 0)
-            const valorNumerico = (coluna) => `Number(window.paisAtual[${coluna}] ?? NaN)`;
+            const valorNumerico = (coluna) => `Number(paisAtual[${coluna}] ?? NaN)`;
 
             Blockly.JavaScript['se_igual'] = function(block) {
                 const coluna = JSON.stringify(colunaAtual());
@@ -478,9 +467,8 @@ export default {
         // Troca o workspace em exibição: guarda os blocos da coluna anterior
         // e mostra os da nova (ou um workspace novo, na primeira vez).
         // É um único Blockly.inject; o que muda é o conteúdo e a biblioteca.
+        // (O App reseta o mapa ao trocar a coluna, parando a execução.)
         trocarWorkspace(nova, anterior) {
-            // O laço em andamento pintaria com o programa da coluna antiga
-            window.pararExecucao();
             if (anterior) this.guardarEstado(anterior);
             this.carregarColuna(nova);
         },
@@ -528,7 +516,6 @@ export default {
         // recarrega a coluna em exibição. Lança erro se algum estado não
         // puder ser carregado (arquivo de outra versão, por exemplo).
         importarWorkspaces(workspaces) {
-            window.pararExecucao();
             const anteriores = this.estados;
             this.estados = { ...workspaces };
             try {
@@ -559,13 +546,12 @@ export default {
         // (dentro do "para cada país"), com a cor e os valores das condições
         // "se" que o envolvem. Sem condição, o rótulo é "Todos os países".
         // Devolve também a coluna do workspace (tooltip do mapa).
-        montarLegenda() {
+        montarLegenda(workspace, coluna) {
             const itens = [];
             const vistos = new Set();
-            const coluna = this.colunaAtual;
             const nome = coluna ? this.rotuloColuna(coluna) : '';
 
-            for (const bloco of this.workspace.getBlocksByType('pintar', true)) {
+            for (const bloco of workspace.getBlocksByType('pintar', true)) {
                 if (bloco.getRootBlock().type !== 'iniciar_programa') continue;
 
                 // Cada condição vira {rotulo, detalhe}: o rótulo aparece na
@@ -610,37 +596,41 @@ export default {
             }
             return { itens, colunas: coluna ? [coluna] : [] };
         },
-        executarCodigo() {
+        // Programa de uma coluna, pronto para o MapaPanel rodar:
+        // { codigo, legenda, colunas } ou null se a coluna não tem blocos
+        // dentro do "para cada país". Para a coluna em exibição usa o
+        // workspace da tela; para as outras (comparação de mapas) carrega o
+        // estado guardado num workspace sem tela (headless) só para gerar.
+        programaDaColuna(coluna) {
+            if (!this.workspace || !Blockly.JavaScript) return null;
+            if (coluna === this.colunaAtual) return this.programaDoWorkspace(this.workspace, coluna);
+
+            this.guardarEstado(this.colunaAtual);
+            const estado = this.estados[coluna];
+            if (!estado) return null;
+
+            // Os blocos "se" leem colunaAtual ao nascer (dropdown de
+            // valores) e os geradores ao gerar: aponta para a coluna
+            // pedida só enquanto dura a geração
+            const emExibicao = this.colunaAtual;
+            this.colunaAtual = coluna;
+            const headless = new Blockly.Workspace();
+            Blockly.Events.disable();
             try {
-                if (!Blockly.JavaScript) {
-                    throw new Error('Gerador JavaScript do Blockly não está disponível');
-                }
-                const code = Blockly.JavaScript.workspaceToCode(this.workspace);
-                console.log('📝 Código:', code);
-                if (code.trim()) {
-                    // Encerra uma execução anterior ainda em andamento e
-                    // limpa o mapa, para a nova varredura começar do zero
-                    if (window.resetarMapa) window.resetarMapa();
-                    else window.pararExecucao();
-                    if (window.atualizarLegenda) {
-                        const legenda = this.montarLegenda();
-                        window.atualizarLegenda(legenda.itens, legenda.colunas);
-                    }
-                    // O laço gerado é assíncrono (pausa entre países),
-                    // então erros dentro dele chegam pela Promise
-                    Promise.resolve(eval(code))
-                        .then(() => console.log('✅ Executado!'))
-                        .catch(error => {
-                            console.error('❌ Erro:', error);
-                            alert('Erro ao executar: ' + error.message);
-                        });
-                } else {
-                    console.log('⚠️ Nenhum código para executar');
-                }
-            } catch (error) {
-                console.error('❌ Erro:', error);
-                alert('Erro ao executar: ' + error.message);
+                Blockly.serialization.workspaces.load(estado, headless);
+                return this.programaDoWorkspace(headless, coluna);
+            } finally {
+                Blockly.Events.enable();
+                headless.dispose();
+                this.colunaAtual = emExibicao;
             }
+        },
+        programaDoWorkspace(workspace, coluna) {
+            const codigo = Blockly.JavaScript.workspaceToCode(workspace);
+            if (!codigo.trim()) return null;
+            console.log(`📝 Código (${coluna}):`, codigo);
+            const legenda = this.montarLegenda(workspace, coluna);
+            return { codigo, legenda: legenda.itens, colunas: legenda.colunas };
         }
     }
 };

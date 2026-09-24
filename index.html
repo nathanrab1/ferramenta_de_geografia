@@ -8,7 +8,7 @@
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
     <link rel="stylesheet" href="src/styles/colors.css?v=13">
-    <link rel="stylesheet" href="src/styles/main.css?v=15">
+    <link rel="stylesheet" href="src/styles/main.css?v=21">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -24,11 +24,16 @@
         <!-- Sem continente na URL: tela inicial de escolha -->
         <tela-inicial v-if="!continente"></tela-inicial>
         <template v-else-if="!loading">
-            <dados-panel :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
-            <div class="resizer" @pointerdown="startResize(0, $event)"></div>
-            <blockly-panel ref="blockly" :paises="paisesOrdenados" :coluna="colunaSelecionada" :continente="continente" :style="{ width: panelWidths[1] + 'px' }" @baixar-projeto="baixarProjeto" @abrir-projeto="abrirProjeto" @trocar-continente="trocarContinente"></blockly-panel>
-            <div class="resizer" @pointerdown="startResize(1, $event)"></div>
-            <mapa-panel :paises="paises" :paises-iso-mapping="paisesISOMapping" :continente="continente"></mapa-panel>
+            <!-- v-show (e não v-if): na comparação os painéis só ficam
+                 escondidos, para o BlocklyPanel não perder os blocos -->
+            <div class="area-trabalho" v-show="!comparando">
+                <dados-panel :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :pais-atual="paisEmExecucao" :pais-selecionado="paisSelecionado" @selecionar-pais="selecionarPais" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
+                <div class="resizer" @pointerdown="startResize(0, $event)"></div>
+                <blockly-panel ref="blockly" :paises="paisesOrdenados" :coluna="colunaSelecionada" :continente="continente" :style="{ width: panelWidths[1] + 'px' }" @baixar-projeto="baixarProjeto" @abrir-projeto="abrirProjeto" @trocar-continente="trocarContinente"></blockly-panel>
+                <div class="resizer" @pointerdown="startResize(1, $event)"></div>
+                <mapa-panel ref="mapa" :paises="paises" :paises-iso-mapping="paisesISOMapping" :continente="continente" :coluna="colunaSelecionada" v-model:pais-selecionado="paisSelecionado" :obter-programa="() => programaDaColuna(colunaSelecionada)" mostrar-comparar @comparar="abrirComparacao" @pais-atual="paisEmExecucao = $event"></mapa-panel>
+            </div>
+            <comparar-panel v-if="comparando" :paises="paises" :paises-iso-mapping="paisesISOMapping" :continente="continente" :colunas="colunasComparaveis" :coluna-inicial="colunaSelecionada" :programa-da-coluna="programaDaColuna" @voltar="fecharComparacao"></comparar-panel>
         </template>
         <div v-else class="carregando">
             <h2>⏳ Carregando...</h2>
@@ -88,16 +93,23 @@
             // porque também define qual workspace o BlocklyPanel mostra.
             // ordenacao: {por: 'País' | 'valor', direcao: 'asc' | 'desc'},
             // escolhida clicando nos cabeçalhos; também no App (v-model),
-            // que lembra uma ordenação por coluna
-            props: ['paises', 'coluna', 'ordenacao'],
-            emits: ['largura', 'update:coluna', 'update:ordenacao'],
+            // que lembra uma ordenação por coluna.
+            // paisAtual: nome do país que o laço está visitando durante a
+            // execução (null fora dela): a linha dele ganha destaque e a
+            // tabela rola para mantê-la visível.
+            // paisSelecionado: país clicado na tabela (o mapa dá zoom nele);
+            // a linha fica marcada. Clicar emite selecionar-pais; o App
+            // decide (alterna seleção e comanda o mapa)
+            props: ['paises', 'coluna', 'ordenacao', 'paisAtual', 'paisSelecionado'],
+            emits: ['largura', 'update:coluna', 'update:ordenacao', 'selecionar-pais'],
             watch: {
                 // Ao trocar a coluna ou a ordenação (ou carregar os dados),
                 // avisa o App a largura que a tabela precisa para o painel
                 // se ajustar
                 coluna: 'emitirLargura',
                 ordenacao: 'emitirLargura',
-                paises: 'emitirLargura'
+                paises: 'emitirLargura',
+                paisAtual: 'mostrarLinhaAtual'
             },
             mounted() {
                 this.emitirLargura();
@@ -138,7 +150,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="pais in paises" :key="pais['País']">
+                                <tr v-for="pais in paises" :key="pais['País']" :class="{ executando: pais['País'] === paisAtual, selecionada: pais['País'] === paisSelecionado }" @click="$emit('selecionar-pais', pais['País'])" title="Clique para ver este país no mapa">
                                     <td><strong>{{ pais['País'] }}</strong></td>
                                     <td :class="{ numerico: colunaNumerica }">{{ formatarValor(pais[coluna], coluna) }}</td>
                                 </tr>
@@ -159,6 +171,27 @@
                 seta(por) {
                     if (this.ordenacao.por !== por) return '⇅';
                     return this.ordenacao.direcao === 'asc' ? '▲' : '▼';
+                },
+                // Rola a área da tabela o mínimo para a linha em execução
+                // aparecer inteira, abaixo do cabeçalho fixo (sticky)
+                mostrarLinhaAtual(nome) {
+                    if (!nome) return;
+                    this.$nextTick(() => {
+                        const tabela = this.$refs.tabela;
+                        const linha = tabela && tabela.querySelector('tr.executando');
+                        if (!linha) return;
+                        const area = tabela.parentElement;
+                        const caixa = area.getBoundingClientRect();
+                        const l = linha.getBoundingClientRect();
+                        // Folga para a linha não ficar colada nas bordas
+                        const folga = 12;
+                        const topo = caixa.top + tabela.tHead.offsetHeight + folga;
+                        const base = caixa.bottom - folga;
+                        let delta = 0;
+                        if (l.top < topo) delta = l.top - topo;
+                        else if (l.bottom > base) delta = l.bottom - base;
+                        if (delta) area.scrollBy({ top: delta, behavior: 'smooth' });
+                    });
                 },
                 emitirLargura() {
                     this.$nextTick(() => {
@@ -188,6 +221,10 @@
 
         // Cinza dos países ainda não pintados (fill original dos SVGs)
         const COR_PADRAO_PAIS = '#787878';
+        // Limites do zoom do mapa (roda, pinça e foco num país). 12x é o
+        // bastante para as ilhas pequenas do Caribe e da Oceania
+        const ESCALA_MIN = 0.5;
+        const ESCALA_MAX = 12;
 
         // Identificação do arquivo de projeto (.json): formato e versão,
         // para recusar arquivos de outra origem ou de versões futuras.
@@ -202,16 +239,53 @@
         const MapaPanel = {
             name: 'MapaPanel',
             // continente: entrada de src/continentes.js (arquivo do mapa,
-            // territórios a ocultar e ajustes do SVG)
-            props: ['paises', 'paisesIsoMapping', 'continente'],
+            // territórios a ocultar e ajustes do SVG).
+            // obterPrograma: função que devolve o programa a rodar no botão
+            // "Executar" ({codigo, legenda, colunas, paises}, ou null se não
+            // há blocos). Quem decide qual coluna é o pai (veja rodar).
+            // mostrarComparar: exibe o botão de comparar regionalizações
+            // (só no mapa principal; na comparação ele não faz sentido).
+            // coluna: coluna em exibição na tabela, mostrada no tooltip.
+            // paisSelecionado (v-model): país clicado na tabela; ganha um
+            // contorno e um tooltip fixo. O zoom até ele é comandado pelo
+            // App (focarPais/resetZoom); clicar no mapa ou resetar o zoom
+            // desfaz a seleção (update:paisSelecionado null).
+            props: {
+                paises: Array,
+                paisesIsoMapping: Object,
+                continente: Object,
+                obterPrograma: Function,
+                mostrarComparar: Boolean,
+                coluna: String,
+                paisSelecionado: String
+            },
+            // pais-atual: nome do país que o laço está visitando (null ao
+            // terminar ou parar), para a tabela destacar a linha dele
+            emits: ['comparar', 'pais-atual', 'update:paisSelecionado'],
             data() {
                 return {
                     svgContent: '',
+                    // Id da execução em andamento: cada laço guarda o id
+                    // com que começou e para quando ele muda (pararExecucao)
+                    execucaoId: 0,
+                    // Há um laço rodando (o botão vira "Pausar") / ele está
+                    // pausado pelo botão (vira "Continuar"). retomar: função
+                    // que acorda o laço pausado (veja esperar)
+                    executando: false,
+                    pausado: false,
+                    retomar: null,
+                    // "Próximo país" apertado enquanto o laço ainda dormia
+                    // o intervalo: ao acordar ele avança um país sem parar
+                    passoPendente: false,
                     // Controles de zoom e pan
                     scale: 1,
                     translateX: 0,
                     translateY: 0,
                     isPanning: false,
+                    // Voo animado até um país (focarPais) ou de volta ao
+                    // mapa inteiro: transição mais longa no transform
+                    animando: false,
+                    temporizadorVoo: null,
                     startPanX: 0,
                     startPanY: 0,
                     // Ponteiros (mouse, dedos, caneta) apoiados no mapa:
@@ -246,19 +320,29 @@
                 // Pausa entre países em ms: 1000ms (lento) ... 100ms (rápido)
                 intervaloMs() {
                     return (11 - this.velocidade) * 100;
+                },
+                rotuloExecutar() {
+                    if (this.pausado) return 'Continuar';
+                    return this.executando ? 'Pausar' : 'Executar';
+                },
+                iconeExecutar() {
+                    return this.executando && !this.pausado ? '⏸️' : '▶️';
                 }
             },
             template: `
                 <div class="panel mapa-panel">
                     <div class="mapa-botoes">
-                        <button class="execute-btn" @click="executar">▶️ Executar</button>
-                        <button class="reset-btn" @click="resetarMapa" title="Para a execução e limpa o mapa">⏹️ Parar / Resetar</button>
+                        <!-- Botões só com ícone: o nome fica no title e no aria-label -->
+                        <button class="execute-btn" :class="{ pausar: executando && !pausado }" @click="executar" :title="rotuloExecutar + (executando && !pausado ? ': pausa a pintura; clique de novo para continuar' : ': roda os blocos e pinta o mapa')" :aria-label="rotuloExecutar">{{ iconeExecutar }}</button>
+                        <button class="passo-btn" @click="passo" title="Próximo país: executa os blocos para um país por vez e pausa" aria-label="Próximo país">⏭️</button>
+                        <button class="reset-btn" @click="resetarMapa" title="Parar / Resetar: para a execução e limpa o mapa" aria-label="Parar / Resetar">⏹️</button>
                         <label class="velocidade-ctrl" title="Velocidade da pintura">
                             <span>🐢</span>
                             <input type="range" min="1" max="10" step="1" v-model.number="velocidade">
                             <span>🐇</span>
                             <span class="velocidade-valor">{{ intervaloMs }} ms</span>
                         </label>
+                        <button v-if="mostrarComparar" class="btn-contorno btn-comparar" @click="$emit('comparar')" title="Abre dois mapas lado a lado para comparar regionalizações">⚖️ Comparar</button>
                     </div>
                     <div class="mapa-area" ref="area">
                         <div
@@ -275,7 +359,7 @@
                             <div
                                 v-html="svgContent"
                                 class="mapa-svg"
-                                :style="{ transform: 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')', transformOrigin: 'center center', transition: isPanning ? 'none' : 'transform 0.1s ease-out' }"
+                                :style="{ transform: 'translate(' + translateX + 'px, ' + translateY + 'px) scale(' + scale + ')', transformOrigin: 'center center', transition: isPanning ? 'none' : animando ? 'transform 0.5s ease-in-out' : 'transform 0.1s ease-out' }"
                             ></div>
                         </div>
                         <div class="mapa-tooltip" v-if="tooltip" :class="{ 'a-esquerda': tooltip.aEsquerda }" :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
@@ -296,34 +380,154 @@
             `,
             async mounted() {
                 await this.carregarMapa();
-                window.pintarPais = this.pintarPais;
-                // Chamado pelo App ao trocar a coluna da tabela
-                window.resetarMapa = this.resetarMapa;
-                window.intervaloPintura = this.intervaloMs;
-                window.atualizarLegenda = (itens, colunas = []) => {
-                    this.legenda = itens;
-                    this.colunasVisualizadas = colunas;
-                };
+            },
+            beforeUnmount() {
+                // Um laço em andamento continuaria rodando sem mapa
+                this.pararExecucao();
             },
             watch: {
-                // O laço gerado pelo BlocklyPanel lê esse valor a cada país
-                intervaloMs(valor) {
-                    window.intervaloPintura = valor;
-                },
                 // O mapeamento chega depois do mounted (fetch no componente raiz),
                 // entao refazemos o recorte quando ele finalmente carrega.
                 paisesIsoMapping() {
                     if (this.svgContent) this.ajustarViewBox();
+                },
+                paisSelecionado(nome) {
+                    this.marcarSelecionado(nome);
+                    // Em voo o tooltip abre ao chegar (veja voarPara)
+                    if (!this.animando) this.atualizarTooltipSelecao();
+                },
+                // O contorno da seleção tem espessura fixa na tela
+                scale() {
+                    this.ajustarContorno();
+                },
+                // A coluna da tabela aparece no tooltip fixo
+                coluna() {
+                    this.atualizarTooltipSelecao();
                 }
             },
             methods: {
+                // Botão Executar / Pausar / Continuar
                 executar() {
-                    // O código é gerado e executado pelo BlocklyPanel
-                    if (window.executarCodigo) {
-                        window.executarCodigo();
-                    } else {
-                        console.warn('⚠️ Blockly ainda não está pronto');
+                    if (this.pausado) {
+                        this.continuar();
+                        return;
                     }
+                    if (this.executando) {
+                        this.pausado = true;
+                        return;
+                    }
+                    const programa = this.obterProgramaOuAvisar();
+                    if (programa) this.rodar(programa);
+                },
+                // Botão "Próximo país": avança um país e fica pausado.
+                // Parado: começa a execução já pausada no primeiro país.
+                // Rodando: só pausa (o próximo clique avança).
+                // Pausado: acorda o laço para um país e ele pausa de novo.
+                passo() {
+                    if (!this.executando) {
+                        const programa = this.obterProgramaOuAvisar();
+                        if (!programa) return;
+                        this.rodar(programa);
+                        // O laço já pintou o primeiro país (a parte síncrona
+                        // de rodar) e está dormindo o intervalo; ao acordar
+                        // vê a pausa e espera
+                        this.pausado = true;
+                        return;
+                    }
+                    if (!this.pausado) {
+                        this.pausado = true;
+                        return;
+                    }
+                    if (this.retomar) {
+                        this.acordar();
+                    } else {
+                        this.passoPendente = true;
+                    }
+                },
+                // O código é gerado pelo BlocklyPanel (via obterPrograma)
+                obterProgramaOuAvisar() {
+                    const programa = this.obterPrograma ? this.obterPrograma() : null;
+                    if (!programa) console.log('⚠️ Nenhum código para executar');
+                    return programa;
+                },
+                // Roda um programa neste mapa. codigo: função assíncrona
+                // gerada pelo BlocklyPanel (iniciar_programa) que recebe o
+                // contexto do mapa: a lista de países na ordem da pintura,
+                // o pintarPais, a pausa entre países (slider, lida a cada
+                // país) e o id da execução (para o laço parar ao resetar).
+                rodar({ codigo, legenda, colunas, paises }) {
+                    // Encerra uma execução anterior ainda em andamento e
+                    // limpa o mapa, para a nova varredura começar do zero
+                    this.resetarMapa();
+                    this.legenda = legenda;
+                    this.colunasVisualizadas = colunas;
+                    this.executando = true;
+
+                    const painel = this;
+                    const idDesta = this.execucaoId;
+                    const mapa = {
+                        paises,
+                        pintarPais: (nome, cor) => this.pintarPais(nome, cor),
+                        visitar: (pais) => this.$emit('pais-atual', pais['País']),
+                        esperar: () => this.esperar(),
+                        get execucaoId() { return painel.execucaoId; }
+                    };
+                    // Ao terminar, tira o destaque da tabela e volta o botão
+                    // a "Executar", a não ser que outra execução já tenha
+                    // começado (aí o estado é dela)
+                    const terminou = () => {
+                        if (this.execucaoId !== idDesta) return;
+                        this.executando = false;
+                        this.pausado = false;
+                        this.$emit('pais-atual', null);
+                    };
+                    try {
+                        const programa = new Function(`return ${codigo}`)();
+                        // O laço é assíncrono (pausa entre países), então
+                        // erros dentro dele chegam pela Promise
+                        Promise.resolve(programa(mapa))
+                            .then(() => console.log('✅ Executado!'))
+                            .catch(error => {
+                                console.error('❌ Erro:', error);
+                                alert('Erro ao executar: ' + error.message);
+                            })
+                            .finally(terminou);
+                    } catch (error) {
+                        console.error('❌ Erro:', error);
+                        alert('Erro ao executar: ' + error.message);
+                    }
+                },
+                // Espera entre um país e o próximo: a pausa do slider de
+                // velocidade (não quando avança país a país) e, se o aluno
+                // apertou "Pausar", até ele apertar "Continuar" ou "Próximo
+                // país" (ou parar/resetar, que também acorda o laço: ele
+                // então vê que o id mudou e encerra)
+                async esperar() {
+                    if (!this.pausado) {
+                        await new Promise(r => setTimeout(r, this.intervaloMs));
+                    }
+                    if (this.pausado && !this.passoPendente) {
+                        await new Promise(r => { this.retomar = r; });
+                    }
+                    this.passoPendente = false;
+                },
+                // Acorda o laço parado em esperar (a pausa continua como está)
+                acordar() {
+                    const retomar = this.retomar;
+                    this.retomar = null;
+                    if (retomar) retomar();
+                },
+                continuar() {
+                    this.pausado = false;
+                    this.passoPendente = false;
+                    this.acordar();
+                },
+                // Cancela o laço em andamento (veja execucaoId)
+                pararExecucao() {
+                    this.execucaoId++;
+                    this.executando = false;
+                    this.continuar();
+                    this.$emit('pais-atual', null);
                 },
                 async carregarMapa() {
                     try {
@@ -347,6 +551,7 @@
                     const delta = Math.max(-200, Math.min(200, event.deltaY));
                     const fator = Math.exp(-delta * 0.002);
                     this.aplicarZoom(this.scale * fator, event.clientX, event.clientY);
+                    this.atualizarTooltipSelecao();
                 },
                 // Zoom ancorado no ponto (clientX, clientY): o ponto do mapa
                 // que está ali continua ali depois da mudança de escala.
@@ -356,7 +561,7 @@
                 // nova escala s', a translação vira
                 // t' = (M - C) - (s'/s) * (M - C - t).
                 aplicarZoom(escala, clientX, clientY) {
-                    const novaEscala = Math.max(0.5, Math.min(5, escala));
+                    const novaEscala = Math.max(ESCALA_MIN, Math.min(ESCALA_MAX, escala));
                     if (novaEscala === this.scale) return;
                     const caixa = this.$refs.area.getBoundingClientRect();
                     const mx = clientX - caixa.left - caixa.width / 2;
@@ -464,10 +669,96 @@
                         return null;
                     }
                 },
+                // Volta ao mapa inteiro (duplo clique/toque, ou desselecionar
+                // na tabela) e desfaz a seleção
                 resetZoom() {
-                    this.scale = 1;
-                    this.translateX = 0;
-                    this.translateY = 0;
+                    this.voarPara(1, 0, 0);
+                    this.$emit('update:paisSelecionado', null);
+                },
+                // Centraliza o país e amplia até ele ocupar ~metade da área
+                // (com o teto ESCALA_MAX: ilhas pequenas ficam visíveis sem
+                // perder os vizinhos). O centro do país na tela é
+                // C + t + s*p (veja aplicarZoom); daí tiramos o ponto p do
+                // mapa e escolhemos t' = -s'*p para ele cair no centro C.
+                focarPais(nome) {
+                    const elemento = this.elementoDoPais(nome);
+                    if (!elemento) return;
+                    const caixa = this.$refs.area.getBoundingClientRect();
+                    const r = elemento.getBoundingClientRect();
+                    if (!r.width && !r.height) return;
+                    const px = (r.left + r.width / 2 - caixa.left - caixa.width / 2 - this.translateX) / this.scale;
+                    const py = (r.top + r.height / 2 - caixa.top - caixa.height / 2 - this.translateY) / this.scale;
+                    // Tamanho do país sem zoom
+                    const largura = r.width / this.scale;
+                    const altura = r.height / this.scale;
+                    // Nunca menos que o mapa inteiro (países grandes como o
+                    // Canadá só são centralizados)
+                    const escala = Math.max(1, Math.min(ESCALA_MAX,
+                        0.5 * Math.min(caixa.width / largura, caixa.height / altura)));
+                    this.voarPara(escala, -escala * px, -escala * py);
+                },
+                // Vai animado até a escala/translação dadas; ao chegar,
+                // abre o tooltip do país selecionado (se houver)
+                voarPara(escala, translateX, translateY) {
+                    clearTimeout(this.temporizadorVoo);
+                    this.animando = true;
+                    this.tooltip = null;
+                    this.scale = escala;
+                    this.translateX = translateX;
+                    this.translateY = translateY;
+                    this.temporizadorVoo = setTimeout(() => {
+                        this.animando = false;
+                        this.atualizarTooltipSelecao();
+                    }, 550);
+                },
+                // Elemento do SVG de um país (pelo nome nos dados)
+                elementoDoPais(nome) {
+                    const codigoISO = this.paisesIsoMapping[nome];
+                    const svg = this.$el.querySelector('svg');
+                    return codigoISO && svg ? svg.querySelector(`#${codigoISO}`) : null;
+                },
+                // Contorno coral no país selecionado: uma cópia do elemento
+                // dele (só traço, sem preenchimento) num grupo no fim do
+                // SVG, por cima de tudo. Os paths do arquivo têm stroke
+                // inline, então mudar o traço do próprio país não daria
+                // certo; a cópia também deixa a espessura independente das
+                // fronteiras. O grupo recebe a matriz do elemento até a raiz
+                // do SVG (transforms dos grupos acima e o dele próprio, como
+                // em medirPaises), para a cópia cair exatamente sobre o
+                // original.
+                marcarSelecionado(nome) {
+                    const svg = this.$el.querySelector('svg');
+                    if (!svg) return;
+                    svg.querySelector('.contorno-selecao')?.remove();
+                    const elemento = this.elementoDoPais(nome);
+                    if (!elemento) return;
+                    const ctmRaiz = svg.getScreenCTM();
+                    const ctm = elemento.getScreenCTM();
+                    if (!ctmRaiz || !ctm) return;
+                    const m = ctmRaiz.inverse().multiply(ctm);
+                    const grupo = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    grupo.classList.add('contorno-selecao');
+                    grupo.setAttribute('transform', `matrix(${m.a} ${m.b} ${m.c} ${m.d} ${m.e} ${m.f})`);
+                    const copia = elemento.cloneNode(true);
+                    copia.removeAttribute('id');
+                    copia.removeAttribute('transform');
+                    copia.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+                    grupo.appendChild(copia);
+                    svg.appendChild(grupo);
+                    this.ajustarContorno();
+                },
+                // Espessura do contorno em unidades do país para dar ~3px na
+                // tela em qualquer zoom: px por unidade do SVG (encaixe
+                // "meet" do viewBox) x zoom x escala da matriz do grupo
+                ajustarContorno() {
+                    const svg = this.$el.querySelector('svg');
+                    const grupo = svg && svg.querySelector('.contorno-selecao');
+                    if (!grupo) return;
+                    const vb = svg.viewBox.baseVal;
+                    const pxPorUnidade = Math.min(svg.clientWidth / vb.width, svg.clientHeight / vb.height);
+                    const m = grupo.transform.baseVal.consolidate().matrix;
+                    const largura = 3 / (pxPorUnidade * this.scale * Math.hypot(m.a, m.b));
+                    grupo.style.setProperty('--contorno', largura);
                 },
                 // Pan e pinça com Pointer Events, que cobrem mouse, dedo e
                 // caneta. O .mapa-container tem touch-action: none no CSS;
@@ -536,6 +827,12 @@
                         this.isPanning = false;
                         if (event.pointerType !== 'mouse' && !this.gestoMoveu && event.type === 'pointerup') {
                             this.tratarToque(event);
+                        } else if (!this.gestoMoveu && event.type === 'pointerup') {
+                            // Clique do mouse sem arrastar: desfaz a seleção
+                            // (o zoom fica onde está)
+                            this.$emit('update:paisSelecionado', null);
+                        } else {
+                            this.atualizarTooltipSelecao();
                         }
                     }
                 },
@@ -545,7 +842,7 @@
                     if (event.pointerType !== 'mouse') return;
                     this.ponteiros.delete(event.pointerId);
                     if (this.ponteiros.size === 0) this.isPanning = false;
-                    this.tooltip = null;
+                    this.atualizarTooltipSelecao();
                 },
                 // Toque sem arrastar: duplo toque reseta o zoom; toque num
                 // país mostra o tooltip dele (no lugar do hover do mouse)
@@ -559,6 +856,8 @@
                         this.resetZoom();
                         return;
                     }
+                    // Toque simples desfaz a seleção da tabela
+                    this.$emit('update:paisSelecionado', null);
                     // Com o dedo o event.target é onde o toque começou;
                     // o elemento sob o ponto final é mais confiável
                     const alvo = document.elementFromPoint(event.clientX, event.clientY);
@@ -576,16 +875,20 @@
                     if (this.isPanning) { this.tooltip = null; return; }
                     this.mostrarTooltip(this.paisSobMouse(event.target), event.clientX, event.clientY);
                 },
+                // Sem país sob o mouse, volta o tooltip fixo da seleção
                 mostrarTooltip(pais, clientX, clientY) {
-                    if (!pais) { this.tooltip = null; return; }
-
+                    this.tooltip = pais ? this.montarTooltip(pais, clientX, clientY) : this.tooltipSelecao();
+                },
+                montarTooltip(pais, clientX, clientY) {
                     // o tooltip e posicionado dentro de .mapa-area (nao do painel)
                     const caixa = this.$refs.area.getBoundingClientRect();
-                    this.tooltip = {
+                    // A coluna da tabela e as colunas dos blocos executados,
+                    // na ordem das colunas dos dados
+                    const colunas = [this.coluna, ...this.colunasVisualizadas];
+                    return {
                         nome: pais['País'],
-                        // na ordem das colunas dos dados, não dos blocos
                         atributos: Object.keys(pais)
-                            .filter(c => this.colunasVisualizadas.includes(c))
+                            .filter(c => colunas.includes(c))
                             .map(c => ({ rotulo: c, valor: pais[c] ?? '-' })),
                         x: clientX - caixa.left,
                         y: clientY - caixa.top,
@@ -594,10 +897,28 @@
                         aEsquerda: clientX - caixa.left > caixa.width / 2
                     };
                 },
+                // Tooltip fixo do país selecionado, no centro dele na tela
+                // (null se não há seleção ou o país saiu da área visível)
+                tooltipSelecao() {
+                    if (!this.paisSelecionado) return null;
+                    const elemento = this.elementoDoPais(this.paisSelecionado);
+                    const pais = elemento && this.paisPorISO[elemento.id];
+                    if (!pais) return null;
+                    const r = elemento.getBoundingClientRect();
+                    const caixa = this.$refs.area.getBoundingClientRect();
+                    const x = r.left + r.width / 2;
+                    const y = r.top + r.height / 2;
+                    if (x < caixa.left || x > caixa.right || y < caixa.top || y > caixa.bottom) return null;
+                    return this.montarTooltip(pais, x, y);
+                },
+                atualizarTooltipSelecao() {
+                    if (this.isPanning) return;
+                    this.tooltip = this.tooltipSelecao();
+                },
                 resetarMapa() {
                     // Para o laço em andamento, senão ele continuaria
                     // pintando por cima do mapa recém-limpo
-                    if (window.pararExecucao) window.pararExecucao();
+                    this.pararExecucao();
                     this.legenda = [];
                     this.colunasVisualizadas = [];
 
@@ -677,13 +998,65 @@
             }
         };
 
+        // Componente: CompararPanel. Tela cheia com dois mapas lado a
+        // lado, cada um com um seletor de regionalização (coluna) e os
+        // próprios botões de executar/parar/velocidade, para o aluno
+        // comparar duas regionalizações. Os blocos ficam escondidos (não
+        // dá para editar aqui); "Voltar" retorna aos painéis.
+        const CompararPanel = {
+            name: 'CompararPanel',
+            components: { MapaPanel },
+            // colunas: as que têm programa montado (opções dos seletores).
+            // colunaInicial: a coluna em exibição ao abrir, vai no mapa
+            // da esquerda. programaDaColuna: função do App que gera o
+            // programa de uma coluna (blocos + ordem da tabela dela).
+            props: ['paises', 'paisesIsoMapping', 'continente', 'colunas', 'colunaInicial', 'programaDaColuna'],
+            emits: ['voltar'],
+            data() {
+                const esquerda = this.colunas.includes(this.colunaInicial) ? this.colunaInicial : this.colunas[0];
+                const direita = this.colunas.find(c => c !== esquerda) || esquerda;
+                return { lados: [{ coluna: esquerda }, { coluna: direita }] };
+            },
+            created() {
+                // Instâncias dos MapaPanel por lado (função ref no
+                // template). Fora do data(): não precisa ser reativo
+                this.mapas = [];
+            },
+            template: `
+                <div class="comparar-panel">
+                    <div class="painel-cabecalho comparar-cabecalho">
+                        <button class="btn-contorno" @click="$emit('voltar')" title="Volta aos blocos">← Voltar aos blocos</button>
+                        <span class="comparar-titulo">Comparar regionalizações da <strong>{{ continente.nome }}</strong></span>
+                    </div>
+                    <div class="comparar-mapas">
+                        <div class="comparar-lado" v-for="(lado, i) in lados" :key="i">
+                            <div class="painel-cabecalho coluna-seletor">
+                                <label :for="'comparar-coluna-' + i">Regionalização por:</label>
+                                <select :id="'comparar-coluna-' + i" v-model="lado.coluna" @change="mapas[i].resetarMapa()">
+                                    <option v-for="c in colunas" :key="c" :value="c">{{ c }}</option>
+                                </select>
+                            </div>
+                            <mapa-panel
+                                :ref="el => mapas[i] = el"
+                                :paises="paises"
+                                :paises-iso-mapping="paisesIsoMapping"
+                                :continente="continente"
+                                :obter-programa="() => programaDaColuna(lado.coluna)"
+                            ></mapa-panel>
+                        </div>
+                    </div>
+                </div>
+            `
+        };
+
         // App principal
         const app = createApp({
             components: {
                 TelaInicial,
                 DadosPanel,
                 BlocklyPanel,
-                MapaPanel
+                MapaPanel,
+                CompararPanel
             },
             data() {
                 // Continente da URL (?continente=id); sem ele, tela inicial
@@ -701,6 +1074,17 @@
                     // regionalização daquela coluna, como o workspace).
                     // Colunas ausentes usam ORDENACAO_PADRAO.
                     ordenacoes: {},
+                    // Comparação de regionalizações (CompararPanel) no
+                    // lugar dos painéis; colunasComparaveis: as colunas com
+                    // programa montado, lidas do BlocklyPanel ao abrir
+                    comparando: false,
+                    colunasComparaveis: [],
+                    // País que o laço do mapa principal está visitando
+                    // (destaque na tabela); null fora da execução
+                    paisEmExecucao: null,
+                    // País clicado na tabela: linha marcada e mapa com zoom
+                    // nele (o mapa zera ao clicar nele ou resetar o zoom)
+                    paisSelecionado: null,
                     panelWidths: [
                         300,  // Painel de dados mais estreito
                         window.innerWidth / 3
@@ -731,7 +1115,7 @@
                 // outro workspace: volta ao cinza (e para a execução) até o
                 // aluno executar o programa da nova coluna
                 colunaSelecionada() {
-                    if (window.resetarMapa) window.resetarMapa();
+                    if (this.$refs.mapa) this.$refs.mapa.resetarMapa();
                 }
             },
             async mounted() {
@@ -843,7 +1227,7 @@
                     // houve) antes de trocar os workspaces, senão a troca
                     // gravaria os blocos antigos por cima dos importados
                     await this.$nextTick();
-                    if (window.resetarMapa) window.resetarMapa();
+                    this.$refs.mapa.resetarMapa();
                     try {
                         this.$refs.blockly.importarWorkspaces(workspaces);
                     } catch (error) {
@@ -884,6 +1268,47 @@
                         return;
                     }
                     location.href = location.pathname;
+                },
+                // Clique numa linha da tabela: seleciona o país e o mapa voa
+                // até ele; clicar de novo na mesma linha volta ao mapa inteiro
+                selecionarPais(nome) {
+                    if (nome === this.paisSelecionado) {
+                        this.$refs.mapa.resetZoom();
+                    } else {
+                        this.paisSelecionado = nome;
+                        this.$refs.mapa.focarPais(nome);
+                    }
+                },
+                // Programa de uma coluna para um MapaPanel rodar: os blocos
+                // dela (BlocklyPanel) mais os países na ordem da tabela
+                // daquela coluna. null se a coluna não tem blocos.
+                programaDaColuna(coluna) {
+                    const blockly = this.$refs.blockly;
+                    const programa = blockly ? blockly.programaDaColuna(coluna) : null;
+                    if (!programa) return null;
+                    const ordenacao = this.ordenacoes[coluna] || ORDENACAO_PADRAO;
+                    return { ...programa, paises: ordenarPaises(this.paises, coluna, ordenacao) };
+                },
+                // Botão "Comparar" do mapa: abre os dois mapas lado a lado.
+                // Só entram no seletor as colunas com programa montado, na
+                // ordem das colunas da tabela
+                abrirComparacao() {
+                    const comBlocos = Object.keys(this.$refs.blockly.exportarWorkspaces());
+                    const colunas = Object.keys(this.paises[0] || {}).filter(c => comBlocos.includes(c));
+                    if (colunas.length < 2) {
+                        alert('Para comparar, monte a regionalização de pelo menos duas colunas.');
+                        return;
+                    }
+                    this.colunasComparaveis = colunas;
+                    this.comparando = true;
+                },
+                fecharComparacao() {
+                    this.comparando = false;
+                    // O workspace ficou escondido (display: none) e precisa
+                    // se remedir ao reaparecer
+                    if (window.resizeBlockly) {
+                        this.$nextTick(() => window.resizeBlockly());
+                    }
                 },
                 // Painel de dados sempre do tamanho da tabela (coluna atual)
                 ajustarPainelDados(largura) {

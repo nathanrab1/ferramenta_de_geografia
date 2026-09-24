@@ -28,6 +28,12 @@ body {
     position: relative;
 }
 
+/* Os três painéis de trabalho ficam direto no flex do #app; o wrapper
+   existe só para o v-show da comparação (display: contents não cria caixa) */
+.area-trabalho {
+    display: contents;
+}
+
 /* Painel genérico */
 .panel {
     height: 100vh;
@@ -269,6 +275,44 @@ body {
     cursor: pointer;
 }
 
+/* Linha do país selecionado (clique): azul claro com uma barra azul à
+   esquerda. O mapa dá zoom nele. Antes de .executando, que prevalece */
+.dados-table tbody tr.selecionada td {
+    background-color: #DDE7F2;
+}
+
+.dados-table tbody tr.selecionada td:first-child {
+    box-shadow: inset 4px 0 0 var(--color-primary-blue);
+}
+
+/* Linha do país que o laço está visitando durante a execução: fundo
+   coral claro, contorno coral (traçado com box-shadow inset em cada
+   célula, porque tr não aceita borda com border-spacing) e um brilho
+   que acompanha o pulo de linha em linha. Depois de :hover e
+   :nth-child(even), que têm a mesma especificidade, para prevalecer. */
+.dados-table tbody tr.executando td {
+    background-color: #FBE1D5;
+    color: var(--color-secondary-orange);
+    box-shadow:
+        inset 0 2px 0 var(--color-secondary-orange),
+        inset 0 -2px 0 var(--color-secondary-orange),
+        0 0 10px rgba(216, 117, 80, 0.55);
+}
+
+.dados-table tbody tr.executando td:first-child {
+    box-shadow:
+        inset 2px 2px 0 var(--color-secondary-orange),
+        inset 0 -2px 0 var(--color-secondary-orange),
+        0 0 10px rgba(216, 117, 80, 0.55);
+}
+
+.dados-table tbody tr.executando td:last-child {
+    box-shadow:
+        inset -2px 2px 0 var(--color-secondary-orange),
+        inset 0 -2px 0 var(--color-secondary-orange),
+        0 0 10px rgba(216, 117, 80, 0.55);
+}
+
 /* Painel Blockly */
 .blockly-panel {
     background-color: #F5F5F5; /* fixo, igual ao fundo do workspace (temaClic) */
@@ -335,12 +379,18 @@ body {
     background-color: var(--color-neutral-white);
 }
 
+/* Botões do mapa só com ícone (emoji): quadrados, ícone grande; o
+   nome da ação fica no title/aria-label */
 .execute-btn,
+.passo-btn,
 .reset-btn {
     color: var(--text-light);
     border: none;
-    padding: 12px 24px;
-    font-size: 15px;
+    width: 48px;
+    height: 44px;
+    padding: 0;
+    line-height: 1;
+    font-size: 22px;
     font-weight: 600;
     font-family: inherit;
     border-radius: 8px;
@@ -350,18 +400,21 @@ body {
 }
 
 .execute-btn:hover,
+.passo-btn:hover,
 .reset-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 8px var(--shadow-medium);
 }
 
 .execute-btn:active,
+.passo-btn:active,
 .reset-btn:active {
     transform: translateY(0);
     box-shadow: 0 1px 2px var(--shadow-light);
 }
 
 .execute-btn:focus-visible,
+.passo-btn:focus-visible,
 .reset-btn:focus-visible {
     outline: 2px solid var(--color-primary-blue);
     outline-offset: 2px;
@@ -373,6 +426,25 @@ body {
 
 .execute-btn:hover {
     background-color: #4f9160;
+}
+
+/* Durante a execução o botão vira "Pausar" (âmbar); pausado, volta a
+   verde como "Continuar" */
+.execute-btn.pausar {
+    background-color: var(--accent-orange);
+}
+
+.execute-btn.pausar:hover {
+    background-color: #cf6d15;
+}
+
+/* "Próximo país" (um país por vez): azul, entre executar e resetar */
+.passo-btn {
+    background-color: var(--color-primary-blue);
+}
+
+.passo-btn:hover {
+    background-color: #4d6b8f;
 }
 
 .reset-btn {
@@ -410,6 +482,11 @@ body {
     /* fundo branco fixo: cor fixa (veja .mapa-legenda) */
     color: var(--color-neutral-black);
     text-align: right;
+}
+
+/* Botão de comparar regionalizações, à direita dos botões do mapa */
+.btn-comparar {
+    margin-left: auto;
 }
 
 /* Area do mapa: referencia (position: relative) para o tooltip e a legenda,
@@ -588,6 +665,23 @@ body {
    opacidade o pais fica translucido e o poligono #grandes-lagos (que fica
    atras dele) aparecia como um retangulo azul. Só com mouse: no touch o
    :hover "gruda" no último país tocado. */
+/* País selecionado na tabela: cópia do país só com o traço coral, por
+   cima do mapa (veja MapaPanel.marcarSelecionado). !important porque os
+   paths copiados trazem fill/stroke inline do arquivo. --contorno é a
+   espessura calculada pelo MapaPanel para ficar ~3px em qualquer zoom */
+.mapa-svg .contorno-selecao,
+.mapa-svg .contorno-selecao * {
+    fill: none !important;
+    stroke: var(--color-secondary-orange) !important;
+    stroke-width: var(--contorno, 1) !important;
+    stroke-linejoin: round !important;
+    stroke-dasharray: none !important;
+    /* opacity não é forçada: os círculos invisíveis (opacity:0) em volta
+       das ilhas pequenas continuam invisíveis na cópia */
+    pointer-events: none;
+    transition: none;
+}
+
 @media (hover: hover) {
     .mapa-svg path:hover,
     .mapa-svg g:hover {
@@ -607,6 +701,65 @@ body {
 .mapa-container[style*="cursor: grabbing"] .mapa-svg path,
 .mapa-container[style*="cursor: grabbing"] .mapa-svg g {
     cursor: grabbing !important;
+}
+
+/* Comparação de regionalizações: tela cheia com dois mapas lado a lado.
+   Cada lado tem o seletor de coluna em cima e um MapaPanel completo
+   (botões, mapa, legenda) embaixo, ocupando o resto da altura. */
+.comparar-panel {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--color-neutral-white);
+}
+
+.comparar-titulo {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.comparar-titulo strong {
+    color: var(--color-primary-blue);
+}
+
+.comparar-mapas {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+}
+
+.comparar-lado {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.comparar-lado + .comparar-lado {
+    border-left: 2px solid var(--color-primary-blue);
+}
+
+/* Dentro do lado, o mapa preenche o que sobra (e não 100vh como .panel) */
+.comparar-lado .mapa-panel {
+    height: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Telas estreitas (tablet em pé): um mapa embaixo do outro */
+@media (max-width: 700px) {
+    .comparar-mapas {
+        flex-direction: column;
+    }
+
+    .comparar-lado + .comparar-lado {
+        border-left: none;
+        border-top: 2px solid var(--color-primary-blue);
+    }
 }
 
 /* Tela inicial: escolha do continente. Ocupa a janela toda (o #app é
@@ -761,9 +914,10 @@ a.continente-cartao:focus-visible {
     }
 
     .execute-btn,
+    .passo-btn,
     .reset-btn {
-        min-height: 48px;
-        padding: 12px 28px;
+        width: 52px;
+        height: 48px;
     }
 
     .velocidade-ctrl {
