@@ -933,3 +933,224 @@ a.continente-cartao:focus-visible {
         font-size: 16px;
     }
 }
+
+/* ===== Sala de aula ===== */
+
+/* Regiões do mapa gerado (src/sala.js): retângulos pintados como os
+   países; o nome fica por cima e não recebe o mouse */
+.mapa-svg .sala-regiao {
+    transition: fill 0.3s ease;
+}
+
+.mapa-svg.sem-transicao .sala-regiao {
+    transition: none;
+}
+
+@media (hover: hover) {
+    .mapa-svg .sala-regiao:hover {
+        filter: brightness(1.12);
+        cursor: pointer;
+    }
+}
+
+/* Botões da sala no cabeçalho do painel de dados */
+.sala-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.sala-contagem {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.btn-contorno:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+/* Botão principal (preenchido) e botão com cara de link */
+.btn-cheio {
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text-light);
+    background-color: var(--color-primary-blue);
+    border: 2px solid var(--color-primary-blue);
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.btn-cheio:hover:not(:disabled) {
+    background-color: var(--color-secondary-orange);
+    border-color: var(--color-secondary-orange);
+}
+
+.btn-cheio:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.btn-cheio:focus-visible,
+.btn-link:focus-visible {
+    outline: 2px solid var(--color-secondary-teal);
+    outline-offset: 2px;
+}
+
+.btn-link {
+    padding: 0;
+    font: inherit;
+    color: var(--color-primary-blue);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* Configuração da sala: em tela cheia (antes das respostas) ou como
+   janela sobre os painéis (botão "Planilha") */
+.sala-config-tela {
+    width: 100%;
+    min-height: 100vh;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background-color: var(--color-neutral-white);
+}
+
+.sala-config-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.sala-config {
+    width: 100%;
+    max-width: 640px;
+    padding: 28px;
+    color: var(--color-neutral-black);
+    background-color: var(--color-neutral-white);
+    border: 2px solid var(--color-primary-blue);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px var(--shadow-medium);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.sala-config h1 {
+    font-size: 24px;
+    color: var(--color-primary-blue);
+    margin-bottom: 16px;
+}
+
+.sala-config-passos {
+    padding-left: 22px;
+    margin-bottom: 12px;
+}
+
+.sala-config-passos li + li {
+    margin-top: 6px;
+}
+
+.sala-config-link {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.sala-config-link input {
+    flex: 1 1 280px;
+    min-width: 0;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--color-neutral-black);
+    background-color: var(--color-neutral-white);
+    border: 2px solid var(--color-primary-blue);
+    border-radius: 6px;
+}
+
+.sala-config-link input:focus {
+    outline: none;
+    border-color: var(--color-secondary-orange);
+    box-shadow: 0 0 0 3px rgba(216, 117, 80, 0.25);
+}
+
+.sala-config-alternativa {
+    margin-top: 8px;
+    color: var(--text-secondary);
+}
+
+.sala-config-erro {
+    margin-top: 12px;
+    color: var(--error);
+    font-weight: 600;
+}
+
+.sala-config-coluna {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-medium);
+}
+
+.sala-config-coluna .coluna-seletor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 8px;
+}
+
+.sala-config-coluna .coluna-seletor span {
+    font-weight: 600;
+}
+
+.sala-config-coluna .coluna-seletor select {
+    max-width: 100%;
+}
+
+.sala-config-resumo {
+    margin-top: 12px;
+    border-collapse: collapse;
+}
+
+.sala-config-resumo td {
+    padding: 2px 16px 2px 0;
+}
+
+.sala-config-aviso {
+    margin-top: 10px;
+    color: var(--color-neutral-dark);
+}
+
+.sala-config-rodape {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 24px;
+}
+
+.sala-config-rodape .btn-cheio:only-child {
+    margin-left: auto;
+}
+
+@media (pointer: coarse) {
+    .btn-cheio,
+    .sala-config-link input {
+        min-height: 44px;
+    }
+}

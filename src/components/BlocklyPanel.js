@@ -1,4 +1,5 @@
 import { compararValores } from '../utils/ordenacao.js';
+import { termosDo } from '../continentes.js';
 
 const { markRaw } = Vue;
 
@@ -154,6 +155,8 @@ export default {
             const COR_BLOCO_PINTAR = '#E3C15E';
             const COR_BLOCO_SE = '#C8613D';
             const COR_INICIAL = '#e83c2c'; // vermelho
+            // "país" nos continentes, "região" na sala de aula
+            const termos = termosDo(this.continente);
 
             // Definir bloco de início do programa: um bloco "C" (loop)
             // que executa os blocos internos uma vez para cada país
@@ -161,12 +164,12 @@ export default {
                 init: function() {
                     this.appendDummyInput()
                         .appendField("∞")
-                        .appendField("para cada país");
+                        .appendField(`para cada ${termos.singular}`);
                     this.appendStatementInput("DO");
                     this.appendDummyInput()
                         .appendField("↻");
                     this.setColour(COR_BLOCO_LACO);
-                    this.setTooltip("Executa os blocos internos uma vez para cada país");
+                    this.setTooltip(`Executa os blocos internos uma vez para cada ${termos.singular}`);
                     this.setDeletable(false); // Não pode ser deletado
                 }
             };
@@ -208,7 +211,7 @@ export default {
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(COR_BLOCO_PINTAR);
-                    this.setTooltip("Pinta o país atual do laço com a cor escolhida");
+                    this.setTooltip(`Pinta ${termos.atual} do laço com a cor escolhida`);
                 }
             };
 
@@ -226,12 +229,13 @@ export default {
             const panel = this;
             const colunaAtual = () => panel.colunaAtual;
             const rotuloColuna = (coluna) => panel.rotuloColuna(coluna);
-            const paises = this.paises;
 
             // Valores únicos de uma coluna de texto, para o dropdown do
-            // "se =", na ordem própria da coluna (ou alfabética)
+            // "se =", na ordem própria da coluna (ou alfabética). Lê os
+            // dados atuais: na sala eles mudam ao atualizar as respostas.
+            // Respostas vazias (null) não entram.
             const valoresUnicos = (coluna) =>
-                [...new Set(paises.map(p => p[coluna]))]
+                [...new Set(panel.paises.map(p => p[coluna]).filter(v => v != null))]
                     .sort((a, b) => compararValores(coluna, a, b))
                     .map(v => [v, v]);
 
@@ -253,7 +257,7 @@ export default {
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(COR_BLOCO_SE);
-                    this.setTooltip("Executa os blocos internos apenas se o país atual tiver esse valor na coluna");
+                    this.setTooltip(`Executa os blocos internos apenas se ${termos.atual} tiver esse valor na coluna`);
                 }
             };
 
@@ -303,7 +307,7 @@ export default {
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(COR_BLOCO_SE);
-                    this.setTooltip("Executa os blocos internos apenas se o país atual tiver, nessa coluna, exatamente o valor digitado");
+                    this.setTooltip(`Executa os blocos internos apenas se ${termos.atual} tiver, nessa coluna, exatamente o valor digitado`);
                 }
             };
 
@@ -320,7 +324,7 @@ export default {
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(COR_BLOCO_SE);
-                    this.setTooltip("Executa os blocos internos apenas se o país atual tiver, nessa coluna, um valor maior que o digitado");
+                    this.setTooltip(`Executa os blocos internos apenas se ${termos.atual} tiver, nessa coluna, um valor maior que o digitado`);
                 }
             };
 
@@ -337,7 +341,7 @@ export default {
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(COR_BLOCO_SE);
-                    this.setTooltip("Executa os blocos internos apenas se o país atual tiver, nessa coluna, um valor menor que o digitado");
+                    this.setTooltip(`Executa os blocos internos apenas se ${termos.atual} tiver, nessa coluna, um valor menor que o digitado`);
                 }
             };
 
@@ -356,7 +360,7 @@ export default {
                     this.setPreviousStatement(true, null);
                     this.setNextStatement(true, null);
                     this.setColour(COR_BLOCO_SE);
-                    this.setTooltip("Executa os blocos internos apenas se o país atual tiver, nessa coluna, um valor entre os dois digitados (limites inclusos)");
+                    this.setTooltip(`Executa os blocos internos apenas se ${termos.atual} tiver, nessa coluna, um valor entre os dois digitados (limites inclusos)`);
                 }
             };
 
@@ -586,7 +590,7 @@ export default {
                 const cor = bloco.getFieldValue('COR');
                 const rotulo = condicoes.length
                     ? condicoes.map(c => c.rotulo).join(' e ')
-                    : 'Todos os países';
+                    : termosDo(this.continente).todos;
                 const detalhe = condicoes.map(c => c.detalhe).join(' e ');
 
                 const chave = `${cor}|${rotulo}`;

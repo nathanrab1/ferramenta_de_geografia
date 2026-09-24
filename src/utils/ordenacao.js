@@ -28,7 +28,8 @@ export function compararValores(coluna, a, b) {
         const d = posicao(a) - posicao(b);
         if (d) return d;
     }
-    return String(a).localeCompare(String(b), 'pt-BR');
+    // numeric: "Aluno 2" antes de "Aluno 10"
+    return String(a).localeCompare(String(b), 'pt-BR', { numeric: true });
 }
 
 // Devolve uma cópia dos países ordenada. Empates (mesmo valor na coluna)

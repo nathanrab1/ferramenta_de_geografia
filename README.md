@@ -1,6 +1,6 @@
 # 🗺️ Ferramenta de Regionalização - CLIC Geografia
 
-Aplicação web interativa para ensino de regionalização de continentes usando programação visual com Blockly. A tela inicial escolhe o continente (América, Europa, Ásia, África ou Oceania).
+Aplicação web interativa para ensino de regionalização de continentes usando programação visual com Blockly. A tela inicial escolhe o que regionalizar: a sala de aula (respostas de um Google Forms) ou um continente (América, Europa, Ásia, África ou Oceania).
 
 ## 📁 Estrutura do Projeto
 
@@ -9,6 +9,7 @@ Aplicação web interativa para ensino de regionalização de continentes usando
 ├── 📄 index.html                 # Página única: tela inicial e app Vue (painéis de dados, blocos e mapa)
 ├── 📂 src/
 │   ├── 📄 continentes.js        # Catálogo dos continentes (arquivos, coluna inicial, ordem das regiões)
+│   ├── 📄 sala.js               # Sala de aula: leitura da planilha do Forms, tabela e regiões sobre o desenho da sala
 │   ├── 📂 components/            # Componentes Vue
 │   │   └── BlocklyPanel.js      # Painel de programação visual
 │   ├── 📂 utils/
@@ -21,6 +22,7 @@ Aplicação web interativa para ensino de regionalização de continentes usando
 │   │   │   ├── africa_paises.json / africa_iso.json
 │   │   │   └── oceania_paises.json / oceania_iso.json
 │   │   └── 📂 svg/              # Mapas SVG, um por continente
+│   │       ├── sala.svg         # Desenho da sala de aula (lousa, mesa, 6x6 carteiras)
 │   │       ├── america.svg
 │   │       ├── europa.svg
 │   │       ├── asia.svg
@@ -55,6 +57,21 @@ Aplicação web interativa para ensino de regionalização de continentes usando
    http://localhost:8000
    ```
    A tela inicial escolhe o continente; `http://localhost:8000/?continente=america` abre a ferramenta direto (link para os alunos).
+
+### Sala de aula
+
+`?continente=sala` regionaliza a própria turma (Aula 01 da sequência). O professor cria um Google Forms com a
+pergunta "Onde você está sentado?" em grade de múltipla escolha (linhas Frente, Centro e Fundo; colunas Esquerda
+e Direita) e perguntas numéricas sobre a sala (quantas canetas no estojo...), vincula as respostas a uma
+planilha, compartilha a planilha como "Qualquer pessoa com o link" e cola o link na ferramenta (também aceita
+um CSV). A pergunta de posição também pode ser uma coluna simples com respostas como "Frente esquerda".
+
+A sala tem seis regiões (três fileiras por dois lados), e cada uma é uma linha da tabela, como um país:
+quantidade de alunos e, para cada pergunta numérica, o total e a média. O laço "para cada região" pinta os
+retângulos de borda arredondada que `src/sala.js` acrescenta, atrás das carteiras, ao desenho da sala
+(`src/assets/svg/sala.svg`). Data/hora, nome e e-mail nunca entram. Quem marca mais de um lugar
+conta só no primeiro (com aviso). "Atualizar respostas" relê a planilha; o projeto baixado guarda as respostas
+e o link.
 
 ### Acrescentar um continente
 

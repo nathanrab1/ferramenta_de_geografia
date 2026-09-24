@@ -8,7 +8,7 @@
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
     <link rel="stylesheet" href="src/styles/colors.css?v=13">
-    <link rel="stylesheet" href="src/styles/main.css?v=21">
+    <link rel="stylesheet" href="src/styles/main.css?v=23">
 
     <!-- Vue 3 -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -27,14 +27,26 @@
             <!-- v-show (e não v-if): na comparação os painéis só ficam
                  escondidos, para o BlocklyPanel não perder os blocos -->
             <div class="area-trabalho" v-show="!comparando">
-                <dados-panel :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :pais-atual="paisEmExecucao" :pais-selecionado="paisSelecionado" @selecionar-pais="selecionarPais" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados"></dados-panel>
+                <dados-panel :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :pais-atual="paisEmExecucao" :pais-selecionado="paisSelecionado" :termos="termos" :casas-decimais="casasDecimais" :rotulos-colunas="rotulosColunas" @selecionar-pais="selecionarPais" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados">
+                    <!-- Sala de aula: respostas do formulário -->
+                    <template v-if="sala" #acoes>
+                        <span class="sala-acoes">
+                            <button v-if="sala.link" class="btn-contorno" @click="atualizarRespostas" :disabled="sala.carregando" title="Lê de novo a planilha, com as respostas enviadas desde a última leitura">{{ sala.carregando ? '⏳ Atualizando…' : '🔄 Atualizar respostas' }}</button>
+                            <button class="btn-contorno" @click="configurandoSala = true" title="Trocar a planilha ou a pergunta com a posição na sala">⚙️ Planilha</button>
+                            <span class="sala-contagem">{{ totalRespostas }} {{ totalRespostas === 1 ? 'resposta' : 'respostas' }}</span>
+                        </span>
+                    </template>
+                </dados-panel>
                 <div class="resizer" @pointerdown="startResize(0, $event)"></div>
                 <blockly-panel ref="blockly" :paises="paisesOrdenados" :coluna="colunaSelecionada" :continente="continente" :style="{ width: panelWidths[1] + 'px' }" @baixar-projeto="baixarProjeto" @abrir-projeto="abrirProjeto" @trocar-continente="trocarContinente"></blockly-panel>
                 <div class="resizer" @pointerdown="startResize(1, $event)"></div>
                 <mapa-panel ref="mapa" :paises="paises" :paises-iso-mapping="paisesISOMapping" :continente="continente" :coluna="colunaSelecionada" v-model:pais-selecionado="paisSelecionado" :obter-programa="() => programaDaColuna(colunaSelecionada)" mostrar-comparar @comparar="abrirComparacao" @pais-atual="paisEmExecucao = $event"></mapa-panel>
             </div>
+            <sala-config v-if="configurandoSala" modal :sala="sala" :total="totalRespostas" :regioes="paises" @carregar="carregarPlanilha" @csv="carregarCsv" @update:pergunta="escolherPerguntaSala" @fechar="configurandoSala = false"></sala-config>
             <comparar-panel v-if="comparando" :paises="paises" :paises-iso-mapping="paisesISOMapping" :continente="continente" :colunas="colunasComparaveis" :coluna-inicial="colunaSelecionada" :programa-da-coluna="programaDaColuna" @voltar="fecharComparacao"></comparar-panel>
         </template>
+        <!-- Sala de aula ainda sem respostas: configuração em tela cheia -->
+        <sala-config v-else-if="sala" :sala="sala" :total="totalRespostas" :regioes="paises" @carregar="carregarPlanilha" @csv="carregarCsv" @update:pergunta="escolherPerguntaSala" @fechar="comecarSala" @voltar="voltarAoInicio" @abrir-projeto="abrirProjetoNaConfiguracao"></sala-config>
         <div v-else class="carregando">
             <h2>⏳ Carregando...</h2>
         </div>
@@ -44,7 +56,8 @@
     <script type="module">
         import BlocklyPanel from './src/components/BlocklyPanel.js';
         import { ORDENACAO_PADRAO, ordenarPaises, definirOrdemValores } from './src/utils/ordenacao.js';
-        import { CONTINENTES, LISTA_CONTINENTES, arquivosDoContinente, continenteDaURL, urlDoContinente } from './src/continentes.js';
+        import { CONTINENTES, LISTA_CONTINENTES, arquivosDoContinente, continenteDaURL, urlDoContinente, termosDo } from './src/continentes.js';
+        import { baixarCsvDaPlanilha, lerCsv, limparRespostas, perguntasDaTabela, detectarPerguntaPosicao, montarRegioes, isoDasRegioes, REGIOES_SALA, COLUNA_QUANTIDADE } from './src/sala.js';
 
         const { createApp } = Vue;
 
@@ -60,7 +73,7 @@
                 <div class="tela-inicial">
                     <header class="tela-inicial-cabecalho">
                         <h1>Ferramenta de Regionalização</h1>
-                        <p>Escolha o continente que você vai regionalizar</p>
+                        <p>Escolha o que você vai regionalizar</p>
                     </header>
                     <div class="continentes">
                         <component
@@ -100,7 +113,14 @@
             // paisSelecionado: país clicado na tabela (o mapa dá zoom nele);
             // a linha fica marcada. Clicar emite selecionar-pais; o App
             // decide (alterna seleção e comanda o mapa)
-            props: ['paises', 'coluna', 'ordenacao', 'paisAtual', 'paisSelecionado'],
+            // termos: como chamar cada linha ("País" ou "Aluno"; veja
+            // termosDo em src/continentes.js).
+            // casasDecimais: coluna -> [mínimo, máximo] de casas, além das
+            // fixas de formatarValor (na sala, as médias).
+            // rotulosColunas: coluna -> nome mostrado no seletor "Visualizar
+            // coluna", quando difere do nome da coluna (na sala, "Região").
+            // Slot "acoes": botões extras no cabeçalho (os da sala de aula)
+            props: ['paises', 'coluna', 'ordenacao', 'paisAtual', 'paisSelecionado', 'termos', 'casasDecimais', 'rotulosColunas'],
             emits: ['largura', 'update:coluna', 'update:ordenacao', 'selecionar-pais'],
             watch: {
                 // Ao trocar a coluna ou a ordenação (ou carregar os dados),
@@ -133,16 +153,17 @@
                         <label for="coluna-select">Visualizar coluna:</label>
                         <select id="coluna-select" :value="coluna" @change="$emit('update:coluna', $event.target.value)">
                             <option v-for="coluna in colunas" :key="coluna" :value="coluna">
-                                {{ coluna }}
+                                {{ (rotulosColunas && rotulosColunas[coluna]) || coluna }}
                             </option>
                         </select>
+                        <slot name="acoes"></slot>
                     </div>
                     <div class="tabela-scroll">
                         <table class="dados-table" ref="tabela">
                             <thead>
                                 <tr>
-                                    <th class="ordenavel" :class="{ ativa: ordenacao.por === 'País' }" @click="ordenarPor('País')" title="Ordenar por nome do país">
-                                        País <span class="seta">{{ seta('País') }}</span>
+                                    <th class="ordenavel" :class="{ ativa: ordenacao.por === 'País' }" @click="ordenarPor('País')" :title="'Ordenar por nome: ' + termos.singular">
+                                        {{ termos.titulo }} <span class="seta">{{ seta('País') }}</span>
                                     </th>
                                     <th class="ordenavel" :class="{ numerico: colunaNumerica, ativa: ordenacao.por === 'valor' }" @click="ordenarPor('valor')" title="Ordenar por esta coluna">
                                         {{ coluna }} <span class="seta">{{ seta('valor') }}</span>
@@ -150,7 +171,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="pais in paises" :key="pais['País']" :class="{ executando: pais['País'] === paisAtual, selecionada: pais['País'] === paisSelecionado }" @click="$emit('selecionar-pais', pais['País'])" title="Clique para ver este país no mapa">
+                                <tr v-for="pais in paises" :key="pais['País']" :class="{ executando: pais['País'] === paisAtual, selecionada: pais['País'] === paisSelecionado }" @click="$emit('selecionar-pais', pais['País'])" :title="'Clique para ver ' + termos.este + ' no mapa'">
                                     <td><strong>{{ pais['País'] }}</strong></td>
                                     <td :class="{ numerico: colunaNumerica }">{{ formatarValor(pais[coluna], coluna) }}</td>
                                 </tr>
@@ -211,13 +232,110 @@
                     // Casas decimais por coluna (demais são inteiras); o PIB
                     // mostra até 3 casas para os países muito pequenos
                     // (Tuvalu: 0,065 bilhão) sem poluir os grandes (2.124,0)
-                    const casas = { 'IDH': [3, 3], 'PIB (Bilhões de Dolares)': [1, 3] }[coluna] ?? [0, 0];
+                    const casas = { 'IDH': [3, 3], 'PIB (Bilhões de Dolares)': [1, 3], ...this.casasDecimais }[coluna] ?? [0, 0];
                     return valor.toLocaleString('pt-BR', {
                         minimumFractionDigits: casas[0], maximumFractionDigits: casas[1]
                     });
                 }
             }
         };
+
+        // Componente: SalaConfig. Liga a sala de aula à planilha de
+        // respostas do Google Forms (ou a um CSV) e escolhe a pergunta com
+        // a posição na sala. Em tela cheia ao abrir a sala (antes de ter
+        // respostas) e como janela (modal) pelo botão "Planilha".
+        // sala: estado do App ({link, carregando, erro, perguntas, pergunta,
+        // avisos}). total: quantas respostas foram lidas; regioes: as linhas
+        // da tabela (para o resumo de alunos por região).
+        const SalaConfig = {
+            name: 'SalaConfig',
+            props: { sala: Object, total: Number, regioes: Array, modal: Boolean },
+            emits: ['carregar', 'csv', 'update:pergunta', 'fechar', 'voltar', 'abrir-projeto'],
+            data() {
+                return { link: this.sala.link, COLUNA_QUANTIDADE };
+            },
+            template: `
+                <div :class="modal ? 'sala-config-fundo' : 'sala-config-tela'" @click.self="modal && $emit('fechar')">
+                    <div class="sala-config" role="dialog" aria-labelledby="sala-config-titulo">
+                        <h1 id="sala-config-titulo">🏫 Regionalização da sala de aula</h1>
+                        <ol class="sala-config-passos">
+                            <li>Crie um <strong>Google Forms</strong> com a pergunta <em>“Onde você está sentado?”</em> em <strong>grade de múltipla escolha</strong>: linhas Frente, Centro e Fundo; colunas Esquerda e Direita. Acrescente perguntas com números sobre a sala (quantas canetas no estojo…).</li>
+                            <li>Na aba <strong>Respostas</strong> do formulário, clique em <strong>Vincular ao Planilhas</strong>.</li>
+                            <li>Na planilha, clique em <strong>Compartilhar</strong> e escolha <strong>“Qualquer pessoa com o link”</strong> (leitor).</li>
+                            <li>Copie o link da planilha e cole aqui:</li>
+                        </ol>
+                        <form class="sala-config-link" @submit.prevent="$emit('carregar', link)">
+                            <input type="url" v-model.trim="link" placeholder="https://docs.google.com/spreadsheets/d/..." aria-label="Link da planilha de respostas" required>
+                            <button type="submit" class="btn-cheio" :disabled="sala.carregando || !link">{{ sala.carregando ? '⏳ Lendo…' : 'Ler respostas' }}</button>
+                        </form>
+                        <p class="sala-config-alternativa">
+                            ou <button type="button" class="btn-link" @click="$refs.csv.click()">envie um arquivo CSV</button>
+                            <input type="file" accept=".csv,text/csv" ref="csv" hidden @change="lerArquivo($event, 'csv')">
+                            <template v-if="!modal">
+                                · <button type="button" class="btn-link" @click="$refs.projeto.click()">abra um projeto salvo</button>
+                                <input type="file" accept=".json,application/json" ref="projeto" hidden @change="lerArquivo($event, 'projeto')">
+                            </template>
+                        </p>
+                        <p v-if="sala.erro" class="sala-config-erro" role="alert">{{ sala.erro }}</p>
+
+                        <div v-if="total" class="sala-config-coluna">
+                            <p><strong>{{ total }} {{ total === 1 ? 'resposta lida' : 'respostas lidas' }}.</strong></p>
+                            <label class="coluna-seletor">
+                                <span>Pergunta com a posição na sala:</span>
+                                <select :value="sala.pergunta || ''" @change="$emit('update:pergunta', $event.target.value || null)">
+                                    <option value="">(nenhuma)</option>
+                                    <option v-for="p in sala.perguntas" :key="p" :value="p">{{ p }}</option>
+                                </select>
+                            </label>
+                            <p v-if="!sala.pergunta" class="sala-config-erro">Não encontrei a pergunta com a posição (frente, centro ou fundo; esquerda ou direita). Escolha a pergunta acima; sem ela, as regiões ficam vazias.</p>
+                            <template v-else>
+                                <table class="sala-config-resumo">
+                                    <tr v-for="r in regioes" :key="r['País']">
+                                        <td>{{ r['País'] }}</td>
+                                        <td><strong>{{ r[COLUNA_QUANTIDADE] }}</strong> {{ r[COLUNA_QUANTIDADE] === 1 ? 'aluno' : 'alunos' }}</td>
+                                    </tr>
+                                </table>
+                                <p v-if="sala.avisos.varias" class="sala-config-aviso">⚠️ {{ sala.avisos.varias }} {{ sala.avisos.varias === 1 ? 'resposta marcou' : 'respostas marcaram' }} mais de um lugar: contei só o primeiro. Para evitar isso, use <strong>grade de múltipla escolha</strong> (e não de caixas de seleção).</p>
+                                <p v-if="sala.avisos.semPosicao" class="sala-config-aviso">⚠️ {{ sala.avisos.semPosicao }} {{ sala.avisos.semPosicao === 1 ? 'resposta não diz' : 'respostas não dizem' }} onde o aluno senta e {{ sala.avisos.semPosicao === 1 ? 'ficou' : 'ficaram' }} fora das regiões.</p>
+                            </template>
+                        </div>
+
+                        <div class="sala-config-rodape">
+                            <button v-if="!modal" type="button" class="btn-contorno" @click="$emit('voltar')">← Voltar</button>
+                            <button v-if="total" type="button" class="btn-cheio" @click="$emit('fechar')">{{ modal ? 'Fechar' : 'Começar →' }}</button>
+                        </div>
+                    </div>
+                </div>
+            `,
+            methods: {
+                async lerArquivo(event, tipo) {
+                    const arquivo = event.target.files[0];
+                    // Permite escolher o mesmo arquivo de novo depois
+                    event.target.value = '';
+                    if (!arquivo) return;
+                    const texto = await arquivo.text();
+                    if (tipo === 'csv') {
+                        this.$emit('csv', texto);
+                        return;
+                    }
+                    try {
+                        this.$emit('abrir-projeto', JSON.parse(texto));
+                    } catch (error) {
+                        alert('Não foi possível ler o arquivo: não é um JSON válido.');
+                    }
+                }
+            }
+        };
+
+        // Último link de planilha usado na sala de aula, para não precisar
+        // colar de novo ao recarregar a página (só neste navegador)
+        const CHAVE_LINK_SALA = 'clic-regionalizacao-link-sala';
+        function lerLinkSala() {
+            try { return localStorage.getItem(CHAVE_LINK_SALA) || ''; } catch (error) { return ''; }
+        }
+        function guardarLinkSala(link) {
+            try { localStorage.setItem(CHAVE_LINK_SALA, link); } catch (error) { /* sem armazenamento */ }
+        }
 
         // Cinza dos países ainda não pintados (fill original dos SVGs)
         const COR_PADRAO_PAIS = '#787878';
@@ -327,6 +445,9 @@
                 },
                 iconeExecutar() {
                     return this.executando && !this.pausado ? '⏸️' : '▶️';
+                },
+                termos() {
+                    return termosDo(this.continente);
                 }
             },
             template: `
@@ -334,7 +455,7 @@
                     <div class="mapa-botoes">
                         <!-- Botões só com ícone: o nome fica no title e no aria-label -->
                         <button class="execute-btn" :class="{ pausar: executando && !pausado }" @click="executar" :title="rotuloExecutar + (executando && !pausado ? ': pausa a pintura; clique de novo para continuar' : ': roda os blocos e pinta o mapa')" :aria-label="rotuloExecutar">{{ iconeExecutar }}</button>
-                        <button class="passo-btn" @click="passo" title="Próximo país: executa os blocos para um país por vez e pausa" aria-label="Próximo país">⏭️</button>
+                        <button class="passo-btn" @click="passo" :title="termos.proximo + ': executa os blocos para ' + termos.um + ' por vez e pausa'" :aria-label="termos.proximo">⏭️</button>
                         <button class="reset-btn" @click="resetarMapa" title="Parar / Resetar: para a execução e limpa o mapa" aria-label="Parar / Resetar">⏹️</button>
                         <label class="velocidade-ctrl" title="Velocidade da pintura">
                             <span>🐢</span>
@@ -590,11 +711,13 @@
                     const svg = this.$el.querySelector('svg');
                     if (!svg) return;
 
-                    const bbox = this.medirPaises(svg) || this.medirTudo(svg);
+                    // Na sala o recorte é o desenho inteiro (com a lousa)
+                    const bbox = (!this.continente.recorteCompleto && this.medirPaises(svg)) || this.medirTudo(svg);
                     if (!bbox) return;
 
-                    // Margem pequena para o traco das bordas nao ficar cortado.
-                    const margem = Math.max(bbox.width, bbox.height) * 0.02;
+                    // Margem pequena para o traco das bordas nao ficar cortado
+                    // (a sala pede uma margem maior: continente.margemRecorte)
+                    const margem = Math.max(bbox.width, bbox.height) * (this.continente.margemRecorte ?? 0.02);
                     const x = bbox.x - margem;
                     const y = bbox.y - margem;
                     const largura = bbox.width + margem * 2;
@@ -922,7 +1045,8 @@
                     this.legenda = [];
                     this.colunasVisualizadas = [];
 
-                    // Devolve a cor cinza original do SVG a todos os paises mapeados
+                    // Devolve a cor original (cinza) a todos os paises mapeados
+                    const corPadrao = this.continente.corPadrao || COR_PADRAO_PAIS;
                     const svg = this.$el.querySelector('svg');
                     if (!svg) return;
 
@@ -942,8 +1066,8 @@
 
                         const alvos = [elemento, ...elemento.querySelectorAll('path, polygon, circle, rect, ellipse')];
                         alvos.forEach(el => {
-                            el.style.fill = COR_PADRAO_PAIS;
-                            el.setAttribute('fill', COR_PADRAO_PAIS);
+                            el.style.fill = corPadrao;
+                            el.setAttribute('fill', corPadrao);
                         });
                     }
 
@@ -1056,20 +1180,39 @@
                 DadosPanel,
                 BlocklyPanel,
                 MapaPanel,
-                CompararPanel
+                CompararPanel,
+                SalaConfig
             },
             data() {
                 // Continente da URL (?continente=id); sem ele, tela inicial
                 const continente = continenteDaURL();
+                const ehSala = !!continente && continente.tipo === 'sala';
                 return {
                     continente,
+                    // Sala de aula (null nos continentes): link da planilha,
+                    // respostas lidas (sem data/nome/e-mail) e a pergunta com
+                    // a posição na sala. A tabela (paises) é calculada disso:
+                    // uma linha por região (veja montarRegioes)
+                    sala: ehSala ? {
+                        link: lerLinkSala(),
+                        carregando: false,
+                        erro: '',
+                        tabela: null,
+                        perguntas: [],
+                        pergunta: null,
+                        medias: [],
+                        avisos: { varias: 0, semPosicao: 0 }
+                    } : null,
+                    // Janela de configuração da sala aberta sobre os painéis
+                    configurandoSala: false,
                     paises: [],
                     paisesISOMapping: {},
                     loading: true,
                     // Coluna da tabela em exibição. Cada coluna tem o seu
                     // próprio workspace no BlocklyPanel (uma regionalização
                     // por coluna)
-                    colunaSelecionada: continente ? continente.colunaInicial : null,
+                    // (na sala, definida ao ler as respostas)
+                    colunaSelecionada: continente ? continente.colunaInicial || null : null,
                     // Ordenação da tabela, lembrada por coluna (faz parte da
                     // regionalização daquela coluna, como o workspace).
                     // Colunas ausentes usam ORDENACAO_PADRAO.
@@ -1096,6 +1239,21 @@
                 };
             },
             computed: {
+                termos() {
+                    return termosDo(this.continente);
+                },
+                totalRespostas() {
+                    return this.sala && this.sala.tabela ? this.sala.tabela.respostas.length : 0;
+                },
+                // Na sala, a quantidade de alunos aparece como "Região" no
+                // seletor de coluna (só o rótulo; a coluna não muda)
+                rotulosColunas() {
+                    return this.sala ? { [COLUNA_QUANTIDADE]: 'Região' } : {};
+                },
+                // Médias da sala com uma casa decimal na tabela
+                casasDecimais() {
+                    return this.sala ? Object.fromEntries(this.sala.medias.map(c => [c, [1, 1]])) : {};
+                },
                 ordenacaoAtual: {
                     get() {
                         return this.ordenacoes[this.colunaSelecionada] || ORDENACAO_PADRAO;
@@ -1122,7 +1280,11 @@
                 if (!this.continente) return;
                 document.title = `Regionalização da ${this.continente.nome} - CLIC Geografia`;
                 definirOrdemValores(this.continente.ordemValores);
-                await this.carregarDados();
+                if (this.sala) {
+                    await this.iniciarSala();
+                } else {
+                    await this.carregarDados();
+                }
                 this.abrirProjetoPendente();
                 // Pointer Events: o divisor também se arrasta com o dedo
                 document.addEventListener('pointermove', this.handleMouseMove);
@@ -1156,6 +1318,119 @@
                         alert('Erro ao carregar dados. Veja o console.');
                     }
                 },
+                // Sala de aula ao abrir: dados de um projeto a abrir (deixado
+                // por abrirProjeto antes de recarregar a página) ou a última
+                // planilha usada neste navegador. Sem nenhum dos dois, fica
+                // na tela de configuração.
+                async iniciarSala() {
+                    // Regiões na ordem da sala (frente para o fundo), não
+                    // alfabética, na tabela e no laço
+                    definirOrdemValores({ 'País': REGIOES_SALA.map(r => r.nome) });
+                    let pendente = null;
+                    try {
+                        pendente = JSON.parse(sessionStorage.getItem(CHAVE_PROJETO_PENDENTE) || 'null');
+                    } catch (error) { /* ignorado: abrirProjetoPendente descarta */ }
+                    if (pendente && pendente.continente === 'sala' && pendente.sala) {
+                        this.aplicarDadosSala(pendente.sala);
+                        // Abre os painéis mesmo sem a pergunta de posição:
+                        // os blocos do projeto esperam o Blockly existir
+                        this.loading = false;
+                    } else if (this.sala.link) {
+                        await this.carregarPlanilha(this.sala.link);
+                    }
+                },
+                // Lê a planilha do link (botão "Ler respostas" e reabertura)
+                async carregarPlanilha(link) {
+                    this.sala.carregando = true;
+                    this.sala.erro = '';
+                    try {
+                        const texto = await baixarCsvDaPlanilha(link);
+                        this.aplicarCsv(texto, link);
+                        guardarLinkSala(link);
+                    } catch (error) {
+                        this.sala.erro = error.message;
+                    } finally {
+                        this.sala.carregando = false;
+                    }
+                },
+                // Arquivo CSV enviado na configuração (sem link: não há o
+                // que atualizar depois)
+                carregarCsv(texto) {
+                    this.sala.erro = '';
+                    try {
+                        this.aplicarCsv(texto, '');
+                    } catch (error) {
+                        this.sala.erro = error.message;
+                    }
+                },
+                aplicarCsv(texto, link) {
+                    const tabela = limparRespostas(lerCsv(texto));
+                    if (!tabela.cabecalho.length) {
+                        throw new Error('A planilha não tem perguntas (além de data, nome ou e-mail, que ficam de fora).');
+                    }
+                    if (!tabela.respostas.length) {
+                        throw new Error('A planilha ainda não tem respostas.');
+                    }
+                    this.aplicarDadosSala({ tabela, pergunta: this.sala.pergunta, link });
+                },
+                // Troca as respostas da sala e a pergunta de posição (a
+                // anterior, se ainda existir; senão detecta). Na primeira
+                // leitura, com a posição encontrada, já abre os painéis;
+                // sem ela a configuração pede a pergunta.
+                aplicarDadosSala({ tabela, pergunta, link }) {
+                    if (link !== undefined) this.sala.link = link;
+                    this.sala.tabela = tabela;
+                    this.sala.perguntas = perguntasDaTabela(tabela).map(p => p.nome);
+                    this.sala.pergunta = this.sala.perguntas.includes(pergunta) ? pergunta : detectarPerguntaPosicao(tabela);
+                    this.recalcularRegioes();
+                    if (this.loading && this.sala.pergunta) this.loading = false;
+                },
+                // Tabela das seis regiões a partir das respostas. Se os
+                // números mudaram (respostas novas), a pintura do mapa não
+                // vale mais e ele volta ao cinza
+                recalcularRegioes() {
+                    const { regioes, medias, avisos } = montarRegioes(this.sala.tabela, this.sala.pergunta);
+                    const mudou = JSON.stringify(regioes) !== JSON.stringify(this.paises);
+                    this.sala.medias = medias;
+                    this.sala.avisos = avisos;
+                    this.paises = regioes;
+                    this.paisesISOMapping = isoDasRegioes();
+                    if (!(this.colunaSelecionada in regioes[0])) this.colunaSelecionada = COLUNA_QUANTIDADE;
+                    if (mudou && this.$refs.mapa) this.$refs.mapa.resetarMapa();
+                },
+                escolherPerguntaSala(pergunta) {
+                    this.sala.pergunta = pergunta;
+                    this.recalcularRegioes();
+                },
+                // Botão "Começar" da configuração em tela cheia
+                comecarSala() {
+                    this.loading = false;
+                },
+                async atualizarRespostas() {
+                    await this.carregarPlanilha(this.sala.link);
+                    if (this.sala.erro) alert(this.sala.erro);
+                },
+                // "Abra um projeto salvo" na configuração em tela cheia (ainda
+                // sem blocos): os dados da sala vêm do projeto e os blocos
+                // entram assim que o Blockly existir (abrirProjetoPendente)
+                abrirProjetoNaConfiguracao(projeto) {
+                    if (projeto && projeto.formato === PROJETO_FORMATO && projeto.continente === 'sala' && projeto.sala) {
+                        sessionStorage.setItem(CHAVE_PROJETO_PENDENTE, JSON.stringify(projeto));
+                        this.aplicarDadosSala(projeto.sala);
+                        this.loading = false;
+                        this.abrirProjetoPendente();
+                    } else {
+                        this.abrirProjeto(projeto);
+                    }
+                },
+                voltarAoInicio() {
+                    location.href = location.pathname;
+                },
+                // Há blocos montados em alguma coluna (trabalho a perder)?
+                temBlocos() {
+                    const blockly = this.$refs.blockly;
+                    return !!blockly && Object.keys(blockly.exportarWorkspaces()).length > 0;
+                },
                 // Botão "Baixar projeto": salva em um .json os blocos de
                 // todas as colunas, a ordenação de cada uma e a coluna em
                 // exibição, para abrir depois (ou em outro computador)
@@ -1169,6 +1444,15 @@
                         ordenacoes: this.ordenacoes,
                         workspaces: this.$refs.blockly.exportarWorkspaces()
                     };
+                    // Sala de aula: as respostas vão junto (o projeto abre
+                    // sem internet) e o link, para atualizar depois
+                    if (this.sala) {
+                        projeto.sala = {
+                            link: this.sala.link,
+                            pergunta: this.sala.pergunta,
+                            tabela: this.sala.tabela
+                        };
+                    }
                     const blob = new Blob([JSON.stringify(projeto, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -1196,7 +1480,7 @@
                         return;
                     }
                     // Só pergunta se há trabalho a perder
-                    const temBlocos = Object.keys(this.$refs.blockly.exportarWorkspaces()).length > 0;
+                    const temBlocos = this.temBlocos();
                     if (outro.id !== this.continente.id) {
                         const aviso = temBlocos ? ' Os blocos atuais serão perdidos.' : '';
                         if (!confirm(`Este projeto é da ${outro.nome}. Trocar para a ${outro.nome} e abrir o projeto?${aviso}`)) {
@@ -1210,6 +1494,11 @@
                     }
                     if (temBlocos && !confirm('Abrir o projeto vai substituir os blocos atuais de todas as colunas. Continuar?')) {
                         return;
+                    }
+                    // Sala de aula: as respostas guardadas no projeto
+                    // substituem as atuais (antes de filtrar as colunas)
+                    if (this.sala && projeto.sala) {
+                        this.aplicarDadosSala(projeto.sala);
                     }
 
                     // Colunas que não existem mais nos dados são ignoradas
@@ -1263,8 +1552,7 @@
                 // (recarrega a página sem ?continente). Os blocos ficam só
                 // em memória, então avisa se houver trabalho a perder.
                 trocarContinente() {
-                    const temBlocos = Object.keys(this.$refs.blockly.exportarWorkspaces()).length > 0;
-                    if (temBlocos && !confirm('Voltar à escolha de continente descarta os blocos atuais. Baixe o projeto antes se quiser guardá-los. Continuar?')) {
+                    if (this.temBlocos() && !confirm('Voltar à escolha de continente descarta os blocos atuais. Baixe o projeto antes se quiser guardá-los. Continuar?')) {
                         return;
                     }
                     location.href = location.pathname;

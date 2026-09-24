@@ -6,8 +6,43 @@
 // src/assets/data/<id>_paises.json (lista de objetos, uma chave por coluna
 // da tabela, sempre com "País") e src/assets/data/<id>_iso.json (nome do
 // país -> código ISO), e marcar a entrada abaixo com disponivel: true.
+//
+// A sala de aula (tipo: 'sala') só tem o mapa (o desenho da sala): os dados
+// vêm da planilha de respostas de um Google Forms (veja src/sala.js).
+
+import { adicionarRegioesSala, COR_PADRAO_SALA } from './sala.js';
+
+// Como a interface chama cada linha da tabela (cabeçalho, bloco "para
+// cada ...", legenda, botões do mapa), já com o gênero certo
+const TERMOS_PAISES = {
+    singular: 'país', titulo: 'País', atual: 'o país atual', este: 'este país',
+    um: 'um país', todos: 'Todos os países', proximo: 'Próximo país'
+};
 
 export const CONTINENTES = {
+    // Primeiro na tela inicial: a sequência didática começa pela sala
+    sala: {
+        id: 'sala',
+        nome: 'Sala de aula',
+        icone: '🏫',
+        descricao: '6 regiões, com as respostas do formulário da turma',
+        disponivel: true,
+        tipo: 'sala',
+        termos: {
+            singular: 'região', titulo: 'Região', atual: 'a região atual', este: 'esta região',
+            um: 'uma região', todos: 'Todas as regiões', proximo: 'Próxima região'
+        },
+        // As regiões são retângulos acrescentados ao desenho da sala
+        prepararMapa: adicionarRegioesSala,
+        // O recorte do mapa pega o desenho inteiro (lousa e mesa do
+        // professor), não só as regiões
+        recorteCompleto: true,
+        // Folga em volta do desenho ao abrir (fração do maior lado): a
+        // sala aparece inteira, com espaço em volta
+        margemRecorte: 0.2,
+        // Cor das regiões não pintadas (a dos países é cinza-escuro)
+        corPadrao: COR_PADRAO_SALA
+    },
     america: {
         id: 'america',
         nome: 'América',
@@ -101,6 +136,10 @@ export const CONTINENTES = {
 
 // Lista na ordem em que aparecem na tela inicial
 export const LISTA_CONTINENTES = Object.values(CONTINENTES);
+
+export function termosDo(continente) {
+    return (continente && continente.termos) || TERMOS_PAISES;
+}
 
 // Caminhos dos arquivos de um continente
 export function arquivosDoContinente(continente) {
