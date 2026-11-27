@@ -2,17 +2,23 @@
 // O professor cola o link da planilha de respostas (compartilhada como
 // "qualquer pessoa com o link"). A sala tem seis regiões, três fileiras
 // (frente, centro, fundo) por dois lados (esquerda, direita), e cada
-// região é uma linha da tabela, como um país: quantos alunos sentam nela
-// e, para cada pergunta numérica do formulário, a soma das respostas
-// desses alunos. O mapa é o desenho da sala (src/assets/svg/
+// região é uma linha da tabela, como um país: identificada pelo número
+// (1 a 6, o mesmo escrito no mapa), com a posição na sala como valor de
+// texto (coluna "Região": "Frente esquerda"..., para regionalizar por
+// categoria), quantos
+// alunos sentam nela e, para cada pergunta numérica do formulário, a soma
+// das respostas desses alunos. O mapa é o desenho da sala (src/assets/svg/
 // sala.svg) com um retângulo por região acrescentado por cima.
 //
 // Para reaproveitar a tabela, os blocos e o mapa dos continentes, cada
-// região usa a chave 'País' como nome ("Frente esquerda"), e o "código
-// ISO" dela é o id do retângulo no SVG (frente-esquerda...).
+// região usa a chave 'País' como nome (o número: "1"), e o "código ISO"
+// dela é o id do retângulo no SVG (frente-esquerda...).
 
 // Nome da região na chave 'País' (veja o comentário do topo)
 export const CHAVE_NOME = 'País';
+// Colunas fixas da tabela da sala: a região como texto (categórica) e a
+// quantidade de alunos (numérica)
+export const COLUNA_REGIAO = 'Região';
 export const COLUNA_QUANTIDADE = 'Quantidade de alunos';
 
 // Colunas do formulário que ficam de fora: data/hora da resposta e o que
@@ -32,13 +38,15 @@ const LADOS = [
     { id: 'direita', nome: 'direita', termos: ['direit'] }
 ];
 
-// As seis regiões, na ordem da tabela e do laço (fileira por fileira)
+// As seis regiões, na ordem da tabela e do laço (fileira por fileira).
+// numero: 1 a 6 na ordem de leitura (frente esquerda = 1, frente
+// direita = 2, ..., fundo direita = 6), texto para ser uma categoria
 export const REGIOES_SALA = FILEIRAS.flatMap(fileira => LADOS.map(lado => ({
     id: `${fileira.id}-${lado.id}`,
     nome: `${fileira.nome} ${lado.nome}`,
     fileira,
     lado
-})));
+}))).map((regiao, i) => ({ ...regiao, numero: String(i + 1) }));
 
 function normalizar(texto) {
     return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -46,9 +54,10 @@ function normalizar(texto) {
 
 const acharTermo = (lista, texto) => lista.find(item => item.termos.some(t => texto.includes(t))) || null;
 
-// Nome da região -> id do retângulo dela no mapa (o "código ISO")
+// Nome da região na tabela (o número) -> id do retângulo dela no mapa
+// (o "código ISO")
 export function isoDasRegioes() {
-    return Object.fromEntries(REGIOES_SALA.map(r => [r.nome, r.id]));
+    return Object.fromEntries(REGIOES_SALA.map(r => [r.numero, r.id]));
 }
 
 // Endereços CSV de uma planilha do Google, a tentar em ordem. Aceita o
@@ -222,7 +231,8 @@ function nomeDaSoma(pergunta) {
 }
 
 // Tabela das regiões: uma linha por região (todas as seis, mesmo vazias)
-// com a quantidade de alunos e, para cada pergunta numérica (todas as
+// com o número da região ("1" a "6") como nome, a posição na sala
+// (texto), a quantidade de alunos e, para cada pergunta numérica (todas as
 // respostas preenchidas são números), a soma das respostas. Devolve também
 // os avisos para a configuração: quantos marcaram mais de um lugar e
 // quantos não têm posição (esses ficam fora das regiões).
@@ -246,7 +256,11 @@ export function montarRegioes(tabela, nomePergunta) {
 
     const regioes = REGIOES_SALA.map(regiao => {
         const alunos = alunosPorRegiao.get(regiao);
-        const linha = { [CHAVE_NOME]: regiao.nome, [COLUNA_QUANTIDADE]: alunos.length };
+        const linha = {
+            [CHAVE_NOME]: regiao.numero,
+            [COLUNA_REGIAO]: regiao.nome,
+            [COLUNA_QUANTIDADE]: alunos.length
+        };
         for (const p of numericas) {
             linha[nomeDaSoma(p.nome)] = alunos
                 .map(r => paraNumero(r[p.colunas[0].indice] || '') ?? 0)
@@ -272,8 +286,8 @@ export const COR_PADRAO_SALA = COR_REGIAO;
 
 // Acrescenta as seis regiões ao desenho da sala (prepararMapa da sala em
 // src/continentes.js): retângulos de borda arredondada ATRÁS do desenho,
-// para as carteiras aparecerem por cima da cor, e o nome de cada região
-// por cima de tudo. O id do retângulo é o "código ISO" da região: o
+// para as carteiras aparecerem por cima da cor, e o número de cada região
+// (1 a 6, o mesmo da coluna "Região") por cima de tudo. O id do retângulo é o "código ISO" da região: o
 // MapaPanel pinta como pinta os países. O desenho não recebe o mouse,
 // então o tooltip e o clique pegam a região embaixo.
 export function adicionarRegioesSala(svg) {
@@ -282,8 +296,8 @@ export function adicionarRegioesSala(svg) {
     for (const filho of svg.children) filho.style.pointerEvents = 'none';
 
     const regioes = document.createElementNS(NS, 'g');
-    const nomes = document.createElementNS(NS, 'g');
-    nomes.setAttribute('pointer-events', 'none');
+    const numeros = document.createElementNS(NS, 'g');
+    numeros.setAttribute('pointer-events', 'none');
     for (const regiao of REGIOES_SALA) {
         const [x1, x2] = COLUNAS_REGIAO[regiao.lado.id];
         const [y1, y2] = FILEIRAS_REGIAO[regiao.fileira.id];
@@ -294,16 +308,18 @@ export function adicionarRegioesSala(svg) {
         }).forEach(([k, v]) => rect.setAttribute(k, v));
         regioes.appendChild(rect);
 
-        // Contorno branco no texto: legível sobre as carteiras e qualquer cor
+        // Número no corredor entre as duas fileiras de carteiras da
+        // região; contorno branco para ler sobre qualquer cor
         const texto = document.createElementNS(NS, 'text');
         Object.entries({
-            x: (x1 + x2) / 2, y: (y1 + y2) / 2 + 2.5, 'text-anchor': 'middle',
-            'font-size': 7, 'font-weight': 700, 'font-family': 'sans-serif',
-            fill: '#2C2C2C', stroke: '#ffffff', 'stroke-width': 1.6, 'paint-order': 'stroke'
+            x: (x1 + x2) / 2, y: (y1 + y2) / 2, 'text-anchor': 'middle',
+            'dominant-baseline': 'central',
+            'font-size': 12, 'font-weight': 700, 'font-family': 'sans-serif',
+            fill: '#2C2C2C', stroke: '#ffffff', 'stroke-width': 2.4, 'paint-order': 'stroke'
         }).forEach(([k, v]) => texto.setAttribute(k, v));
-        texto.textContent = regiao.nome;
-        nomes.appendChild(texto);
+        texto.textContent = regiao.numero;
+        numeros.appendChild(texto);
     }
     svg.insertBefore(regioes, svg.firstChild);
-    svg.appendChild(nomes);
+    svg.appendChild(numeros);
 }

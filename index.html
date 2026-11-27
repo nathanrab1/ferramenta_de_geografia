@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ferramenta de Regionalização - CLIC Geografia</title>
+    <title>Mapito - CLIC Geografia</title>
 
     <!-- CSS -->
     <!-- ?v= forca o navegador a baixar o CSS de novo quando ele muda -->
@@ -27,7 +27,7 @@
             <!-- v-show (e não v-if): na comparação os painéis só ficam
                  escondidos, para o BlocklyPanel não perder os blocos -->
             <div class="area-trabalho" v-show="!comparando">
-                <dados-panel :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :pais-atual="paisEmExecucao" :pais-selecionado="paisSelecionado" :termos="termos" :rotulos-colunas="rotulosColunas" @selecionar-pais="selecionarPais" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados">
+                <dados-panel :paises="paisesOrdenados" v-model:coluna="colunaSelecionada" v-model:ordenacao="ordenacaoAtual" :pais-atual="paisEmExecucao" :pais-selecionado="paisSelecionado" :termos="termos" :rotulos-colunas="rotulosColunas" :colunas-calculadas="colunasCalculadas" @adicionar-coluna="adicionarColuna" @remover-coluna="removerColuna" @selecionar-pais="selecionarPais" :style="{ width: panelWidths[0] + 'px' }" @largura="ajustarPainelDados">
                     <!-- Sala de aula: respostas do formulário -->
                     <template v-if="sala" #acoes>
                         <span class="sala-acoes">
@@ -56,8 +56,9 @@
     <script type="module">
         import BlocklyPanel from './src/components/BlocklyPanel.js';
         import { ORDENACAO_PADRAO, ordenarPaises, definirOrdemValores } from './src/utils/ordenacao.js';
-        import { CONTINENTES, LISTA_CONTINENTES, arquivosDoContinente, continenteDaURL, urlDoContinente, termosDo } from './src/continentes.js';
-        import { baixarCsvDaPlanilha, lerCsv, limparRespostas, perguntasDaTabela, detectarPerguntaPosicao, montarRegioes, isoDasRegioes, REGIOES_SALA, COLUNA_QUANTIDADE } from './src/sala.js';
+        import { OPERACOES, calcular, aplicarColunas, descreverFormula, colunaValida } from './src/utils/formula.js';
+        import { CONTINENTES, LISTA_CONTINENTES, arquivosDoContinente, continenteDaURL, urlDoContinente, termosDo, comArtigo, doNome } from './src/continentes.js';
+        import { baixarCsvDaPlanilha, lerCsv, limparRespostas, perguntasDaTabela, detectarPerguntaPosicao, montarRegioes, isoDasRegioes, REGIOES_SALA, COLUNA_REGIAO, COLUNA_QUANTIDADE } from './src/sala.js';
 
         const { createApp } = Vue;
 
@@ -72,7 +73,7 @@
             template: `
                 <div class="tela-inicial">
                     <header class="tela-inicial-cabecalho">
-                        <h1>Ferramenta de Regionalização</h1>
+                        <h1>Mapito</h1>
                         <p>Escolha o que você vai regionalizar</p>
                     </header>
                     <div class="continentes">
@@ -83,10 +84,13 @@
                             class="continente-cartao"
                             :class="{ indisponivel: !c.disponivel }"
                             :aria-disabled="!c.disponivel"
+                            :title="c.descricao"
                         >
-                            <span class="continente-icone" aria-hidden="true">{{ c.icone }}</span>
+                            <!-- Miniatura do mapa (ferramentas/gerar_miniaturas.py) -->
+                            <span class="continente-icone" aria-hidden="true">
+                                <img class="continente-mapa" :src="miniaturaDo(c)" alt="">
+                            </span>
                             <span class="continente-nome">{{ c.nome }}</span>
-                            <span class="continente-descricao">{{ c.descricao }}</span>
                             <span v-if="!c.disponivel" class="continente-etiqueta">Em breve</span>
                         </component>
                     </div>
@@ -94,7 +98,275 @@
                 </div>
             `,
             methods: {
-                urlDo: urlDoContinente
+                urlDo: urlDoContinente,
+                miniaturaDo: (c) => arquivosDoContinente(c).miniatura
+            }
+        };
+
+        // Valor de uma célula da tabela, no formato brasileiro: vírgula
+        // decimal e ponto de milhar. Casas decimais por coluna: IDH com 3;
+        // PIB, População e as colunas calculadas (calculada = true) sempre
+        // com 1; as demais com até 1 (inteiros sem vírgula). Usado pelo
+        // DadosPanel e pela TabelaCompleta
+        function formatarValor(valor, coluna, calculada = false) {
+            if (valor === null || valor === undefined) return '-';
+            if (typeof valor !== 'number') return valor;
+            const casas = calculada ? [1, 1]
+                : { 'IDH': [3, 3], 'PIB (Bilhões de Dolares)': [1, 1], 'PIB (Bilhões de Reais)': [1, 1], 'População (Milhões)': [1, 1]}[coluna] ?? [0, 1];
+            return valor.toLocaleString('pt-BR', {
+                minimumFractionDigits: casas[0], maximumFractionDigits: casas[1]
+            });
+        }
+
+        // Número digitado pelo aluno, no jeito brasileiro: "1.000.000",
+        // "2,5" e "1.234,5"; ponto sozinho como decimal ("0.5") também
+        // vale. null se vazio ou inválido
+        function lerNumero(texto) {
+            let s = String(texto).trim().replace(/\s/g, '');
+            if (!s) return null;
+            if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+            else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+            const n = Number(s);
+            return Number.isFinite(n) ? n : null;
+        }
+
+        // Colunas numéricas que não aparecem nas opções da fórmula de uma
+        // coluna nova (TabelaCompleta)
+        const COLUNAS_FORA_DAS_FORMULAS = ['IDH', 'Copas do Mundo'];
+
+        // Componente: TabelaCompleta. Janela (modal) com a tabela inteira:
+        // todas as colunas lado a lado. Abre pelo botão "Tabela completa"
+        // do DadosPanel; fecha no ✕, com Esc ou clicando fora. A ordenação
+        // é só desta janela (clique em qualquer cabeçalho) e começa igual
+        // à da tabela do painel.
+        // paises, termos, rotulosColunas: como no DadosPanel.
+        // colunas: as colunas a mostrar (sem País e coordenadas).
+        // ordemInicial: {coluna, direcao} vinda do painel.
+        // colunasCalculadas: colunas criadas aqui (botão "+ Nova coluna",
+        // depois da última); têm ✕ no cabeçalho para remover.
+        const TabelaCompleta = {
+            name: 'TabelaCompleta',
+            props: ['paises', 'colunas', 'termos', 'rotulosColunas', 'ordemInicial', 'colunasCalculadas'],
+            emits: ['fechar', 'adicionar-coluna', 'remover-coluna'],
+            data() {
+                return {
+                    ordem: { ...this.ordemInicial },
+                    // Formulário da coluna nova (null: fechado). partes é
+                    // [operando, operação, operando] (uma conta só); cada operando é
+                    // { tipo: 'coluna' | 'numero', coluna, numero } (numero
+                    // como texto digitado, com vírgula)
+                    nova: null,
+                    operacoes: OPERACOES
+                };
+            },
+            mounted() {
+                this.aoTeclar = (e) => {
+                    if (e.key !== 'Escape') return;
+                    // Esc fecha primeiro o formulário, depois a janela
+                    if (this.nova) this.nova = null;
+                    else this.$emit('fechar');
+                };
+                document.addEventListener('keydown', this.aoTeclar);
+                this.$refs.fechar.focus();
+            },
+            unmounted() {
+                document.removeEventListener('keydown', this.aoTeclar);
+            },
+            computed: {
+                linhas() {
+                    const { coluna, direcao } = this.ordem;
+                    return ordenarPaises(this.paises, coluna,
+                        { por: coluna === 'País' ? 'País' : 'valor', direcao });
+                },
+                // Colunas numéricas são alinhadas à direita
+                numericas() {
+                    return new Set(this.colunas.filter(c => this.paises.some(p => typeof p[c] === 'number')));
+                },
+                calculadas() {
+                    return new Set((this.colunasCalculadas || []).map(c => c.nome));
+                },
+                // Colunas que podem entrar na fórmula de uma coluna nova:
+                // as numéricas, menos IDH e Copas do Mundo (índice e
+                // contagem, sem sentido em contas com as outras)
+                operandos() {
+                    return [...this.numericas].filter(c => !COLUNAS_FORA_DAS_FORMULAS.includes(c));
+                },
+                // Fórmula do formulário no formato de src/utils/formula.js,
+                // ou null se ainda incompleta (número vazio ou inválido)
+                formulaNova() {
+                    if (!this.nova) return null;
+                    const formula = [];
+                    for (const [i, parte] of this.nova.partes.entries()) {
+                        if (i % 2) { formula.push(parte); continue; }
+                        if (parte.tipo === 'coluna') {
+                            formula.push({ coluna: parte.coluna });
+                        } else {
+                            const n = lerNumero(parte.numero);
+                            if (n === null) return null;
+                            formula.push({ numero: n });
+                        }
+                    }
+                    return formula;
+                },
+                // Problema que impede criar a coluna ('' se nenhum)
+                erroNova() {
+                    if (!this.nova) return '';
+                    const nome = this.nova.nome.trim();
+                    if (!nome) return 'Dê um nome para a coluna.';
+                    if (nome === 'País' || nome.startsWith('Coordenada') || nome in (this.paises[0] || {})) return 'Já existe uma coluna com esse nome.';
+                    if (!this.formulaNova) return 'Digite os números da fórmula.';
+                    if (!this.formulaNova.some((p, i) => i % 2 === 0 && 'coluna' in p)) return 'Use pelo menos uma coluna na fórmula.';
+                    return '';
+                },
+                // Resultado da fórmula nos três primeiros países da tabela,
+                // para conferir antes de criar
+                previa() {
+                    if (!this.formulaNova) return [];
+                    return this.linhas.slice(0, 3).map(p => ({
+                        pais: p['País'],
+                        valor: formatarValor(calcular(this.formulaNova, p), '', true)
+                    }));
+                }
+            },
+            template: `
+                <div class="tabela-completa-fundo" @click.self="$emit('fechar')">
+                    <div class="tabela-completa" role="dialog" aria-modal="true" aria-labelledby="tabela-completa-titulo">
+                        <div class="tabela-completa-topo">
+                            <h2 id="tabela-completa-titulo">Tabela completa</h2>
+                            <span class="tabela-completa-dica">Clique em um cabeçalho para ordenar</span>
+                            <button ref="fechar" class="btn-contorno" @click="$emit('fechar')" title="Fechar (Esc)" aria-label="Fechar">✕ Fechar</button>
+                        </div>
+                        <!-- Segundo caminho para criar coluna (o outro é o
+                             botão depois da última coluna da tabela) -->
+                        <div v-if="!nova && operandos.length" class="tabela-completa-acoes">
+                            <button class="btn-cheio" @click="abrirNova" title="Cria uma coluna nova com uma conta entre as colunas numéricas">+ Nova coluna</button>
+                        </div>
+                        <form v-if="nova" class="nova-coluna" @submit.prevent="criarColuna">
+                            <label class="nova-coluna-nome">
+                                Nome da coluna
+                                <input ref="nomeNova" v-model="nova.nome" type="text" maxlength="60" placeholder="Ex.: Densidade demográfica">
+                            </label>
+                            <div class="nova-coluna-formula">
+                                <span class="nova-coluna-rotulo">Fórmula</span>
+                                <template v-for="(parte, i) in nova.partes" :key="i">
+                                    <select v-if="i % 2" v-model="nova.partes[i]" class="nova-coluna-op" aria-label="Operação">
+                                        <option v-for="op in operacoes" :key="op" :value="op">{{ op }}</option>
+                                    </select>
+                                    <span v-else class="nova-coluna-operando">
+                                        <select :value="parte.tipo === 'numero' ? '#numero' : parte.coluna" @change="escolherOperando(parte, $event.target.value)" aria-label="Coluna ou número">
+                                            <option v-for="c in operandos" :key="c" :value="c">{{ rotulo(c) }}</option>
+                                            <option value="#numero">Número…</option>
+                                        </select>
+                                        <input v-if="parte.tipo === 'numero'" v-model="parte.numero" type="text" inputmode="decimal" placeholder="Ex.: 1000000" aria-label="Número">
+                                    </span>
+                                </template>
+                            </div>
+                            <p class="nova-coluna-dica">
+                                Colunas em milhões ou bilhões entram na conta pelo valor inteiro: a População em habitantes e o PIB em dólares.
+                                Ex.: densidade demográfica (hab/km²) = População ÷ Área; PIB per capita (US$ por pessoa) = PIB ÷ População.
+                            </p>
+                            <p v-if="previa.length && !erroNova" class="nova-coluna-previa">
+                                Prévia: <span v-for="p in previa" :key="p.pais">{{ p.pais }}: <strong>{{ p.valor }}</strong></span>
+                            </p>
+                            <p v-if="erroNova" class="nova-coluna-erro">{{ erroNova }}</p>
+                            <div class="nova-coluna-botoes">
+                                <button type="button" class="btn-contorno" @click="nova = null">Cancelar</button>
+                                <button type="submit" class="btn-cheio" :disabled="!!erroNova">Criar coluna</button>
+                            </div>
+                        </form>
+                        <div class="tabela-completa-scroll">
+                            <table class="dados-table">
+                                <thead>
+                                    <tr>
+                                        <th v-for="c in ['País', ...colunas]" :key="c" class="ordenavel" :class="{ numerico: numericas.has(c), ativa: ordem.coluna === c, calculada: calculadas.has(c) }" @click="ordenarPor(c)" :title="calculadas.has(c) ? rotulo(c) + ' = ' + formulaDe(c) + '. Clique para ordenar' : 'Ordenar por ' + rotulo(c)">
+                                            {{ rotulo(c) }} <span class="seta">{{ seta(c) }}</span>
+                                            <button v-if="calculadas.has(c)" class="remover-coluna" @click.stop="removerColuna(c)" :title="'Remover a coluna ' + c" :aria-label="'Remover a coluna ' + c">✕</button>
+                                        </th>
+                                        <th class="th-nova-coluna">
+                                            <button v-if="operandos.length" class="btn-nova-coluna" @click="abrirNova" title="Cria uma coluna nova com uma conta entre as colunas numéricas">+ Nova coluna</button>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="pais in linhas" :key="pais['País']">
+                                        <td><strong>{{ pais['País'] }}</strong></td>
+                                        <td v-for="c in colunas" :key="c" :class="{ numerico: numericas.has(c) }">{{ formatarValor(pais[c], c, calculadas.has(c)) }}</td>
+                                        <td class="td-nova-coluna"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `,
+            methods: {
+                formatarValor,
+                formulaDe(nome) {
+                    const c = this.colunasCalculadas.find(c => c.nome === nome);
+                    return c ? descreverFormula(c.formula) : '';
+                },
+                abrirNova() {
+                    // Começa com População ÷ Área (densidade demográfica);
+                    // sem essas colunas (sala de aula), as duas primeiras
+                    const colunas = this.operandos;
+                    const tem = (c) => colunas.includes(c) ? c : null;
+                    const a = tem('População (Milhões)') || colunas[0];
+                    const b = tem('Área (km²)') || colunas.find(c => c !== a) || a;
+                    const operando = (c) => ({ tipo: 'coluna', coluna: c, numero: '' });
+                    this.nova = { nome: '', partes: [operando(a), '÷', operando(b)] };
+                    this.$nextTick(() => this.$refs.nomeNova && this.$refs.nomeNova.focus());
+                },
+                escolherOperando(parte, valor) {
+                    if (valor === '#numero') {
+                        parte.tipo = 'numero';
+                    } else {
+                        parte.tipo = 'coluna';
+                        parte.coluna = valor;
+                    }
+                },
+                criarColuna() {
+                    if (this.erroNova) return;
+                    const nome = this.nova.nome.trim();
+                    this.$emit('adicionar-coluna', { nome, formula: this.formulaNova });
+                    this.nova = null;
+                    // Mostra a coluna nova (a última, junto do botão)
+                    this.$nextTick(() => {
+                        const area = this.$el.querySelector('.tabela-completa-scroll');
+                        if (area) area.scrollTo({ left: area.scrollWidth, behavior: 'smooth' });
+                    });
+                },
+                removerColuna(nome) {
+                    // Mesma regra do App: saem também as que usam esta,
+                    // direta ou indiretamente
+                    const removidas = new Set([nome]);
+                    const dependentes = [];
+                    for (const c of this.colunasCalculadas) {
+                        if (c.nome !== nome && c.formula.some((p, i) => i % 2 === 0 && removidas.has(p.coluna))) {
+                            removidas.add(c.nome);
+                            dependentes.push(c.nome);
+                        }
+                    }
+                    const aviso = dependentes.length ? ` As colunas que usam ela também serão removidas: ${dependentes.join(', ')}.` : '';
+                    if (!confirm(`Remover a coluna "${nome}"?${aviso}`)) return;
+                    if (this.ordem.coluna === nome || dependentes.includes(this.ordem.coluna)) {
+                        this.ordem = { coluna: 'País', direcao: 'asc' };
+                    }
+                    this.$emit('remover-coluna', nome);
+                },
+                rotulo(c) {
+                    if (c === 'País') return this.termos.titulo;
+                    return (this.rotulosColunas && this.rotulosColunas[c]) || c;
+                },
+                // Mesmo comportamento do cabeçalho do painel: clicar de novo
+                // inverte a direção; outra coluna começa crescente
+                ordenarPor(c) {
+                    const direcao = this.ordem.coluna === c && this.ordem.direcao === 'asc' ? 'desc' : 'asc';
+                    this.ordem = { coluna: c, direcao };
+                },
+                seta(c) {
+                    if (this.ordem.coluna !== c) return '⇅';
+                    return this.ordem.direcao === 'asc' ? '▲' : '▼';
+                }
             }
         };
 
@@ -118,8 +390,15 @@
             // rotulosColunas: coluna -> nome mostrado no seletor "Visualizar
             // coluna", quando difere do nome da coluna (na sala, "Região").
             // Slot "acoes": botões extras no cabeçalho (os da sala de aula)
-            props: ['paises', 'coluna', 'ordenacao', 'paisAtual', 'paisSelecionado', 'termos', 'rotulosColunas'],
-            emits: ['largura', 'update:coluna', 'update:ordenacao', 'selecionar-pais'],
+            // colunasCalculadas: colunas criadas na tabela completa; criar
+            // e remover sobem ao App (adicionar-coluna, remover-coluna)
+            props: ['paises', 'coluna', 'ordenacao', 'paisAtual', 'paisSelecionado', 'termos', 'rotulosColunas', 'colunasCalculadas'],
+            emits: ['largura', 'update:coluna', 'update:ordenacao', 'selecionar-pais', 'adicionar-coluna', 'remover-coluna'],
+            components: { TabelaCompleta },
+            data() {
+                // Janela com a tabela inteira (botão "Tabela completa")
+                return { tabelaCompleta: false };
+            },
             watch: {
                 // Ao trocar a coluna ou a ordenação (ou carregar os dados),
                 // avisa o App a largura que a tabela precisa para o painel
@@ -140,6 +419,9 @@
                     return Object.keys(this.paises[0])
                         .filter(c => c !== 'País' && !c.startsWith('Coordenada'));
                 },
+                colunaCalculada() {
+                    return (this.colunasCalculadas || []).some(c => c.nome === this.coluna);
+                },
                 // Colunas numéricas são alinhadas à direita
                 colunaNumerica() {
                     return this.paises.some(p => typeof p[this.coluna] === 'number');
@@ -154,6 +436,7 @@
                                 {{ (rotulosColunas && rotulosColunas[coluna]) || coluna }}
                             </option>
                         </select>
+                        <button class="btn-contorno" @click="tabelaCompleta = true" title="Abre a tabela inteira, com todas as colunas">⛶ Tabela completa</button>
                         <slot name="acoes"></slot>
                     </div>
                     <div class="tabela-scroll">
@@ -171,14 +454,19 @@
                             <tbody>
                                 <tr v-for="pais in paises" :key="pais['País']" :class="{ executando: pais['País'] === paisAtual, selecionada: pais['País'] === paisSelecionado }" @click="$emit('selecionar-pais', pais['País'])" :title="'Clique para ver ' + termos.este + ' no mapa'">
                                     <td><strong>{{ pais['País'] }}</strong></td>
-                                    <td :class="{ numerico: colunaNumerica }">{{ formatarValor(pais[coluna], coluna) }}</td>
+                                    <td :class="{ numerico: colunaNumerica }">{{ formatarValor(pais[coluna], coluna, colunaCalculada) }}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+                    <!-- Teleport: fora do painel, que corta o que transborda -->
+                    <teleport to="body">
+                        <tabela-completa v-if="tabelaCompleta" :paises="paises" :colunas="colunas" :termos="termos" :rotulos-colunas="rotulosColunas" :ordem-inicial="{ coluna: ordenacao.por === 'País' ? 'País' : coluna, direcao: ordenacao.direcao }" :colunas-calculadas="colunasCalculadas" @adicionar-coluna="$emit('adicionar-coluna', $event)" @remover-coluna="$emit('remover-coluna', $event)" @fechar="tabelaCompleta = false"></tabela-completa>
+                    </teleport>
                 </div>
             `,
             methods: {
+                formatarValor,
                 // Clique no cabeçalho: se já ordena por ele, inverte a
                 // direção; senão passa a ordenar por ele, crescente
                 ordenarPor(por) {
@@ -222,18 +510,6 @@
                         // Folga para a barra de rolagem vertical do painel
                         this.$emit('largura', Math.ceil(tabela.offsetWidth + padding + 20));
                     });
-                },
-                formatarValor(valor, coluna) {
-                    if (valor === null || valor === undefined) return '-';
-                    if (typeof valor !== 'number') return valor;
-                    // Formato brasileiro: vírgula decimal e ponto de milhar.
-                    // Casas decimais por coluna (demais são inteiras); o PIB
-                    // mostra até 3 casas para os países muito pequenos
-                    // (Tuvalu: 0,065 bilhão) sem poluir os grandes (2.124,0)
-                    const casas = { 'IDH': [3, 3], 'PIB (Bilhões de Dolares)': [1, 3]}[coluna] ?? [0, 0];
-                    return valor.toLocaleString('pt-BR', {
-                        minimumFractionDigits: casas[0], maximumFractionDigits: casas[1]
-                    });
                 }
             }
         };
@@ -250,7 +526,7 @@
             props: { sala: Object, total: Number, regioes: Array, modal: Boolean },
             emits: ['carregar', 'csv', 'update:pergunta', 'fechar', 'voltar', 'abrir-projeto'],
             data() {
-                return { link: this.sala.link, COLUNA_QUANTIDADE };
+                return { link: this.sala.link, COLUNA_REGIAO, COLUNA_QUANTIDADE };
             },
             template: `
                 <div :class="modal ? 'sala-config-fundo' : 'sala-config-tela'" @click.self="modal && $emit('fechar')">
@@ -289,7 +565,7 @@
                             <template v-else>
                                 <table class="sala-config-resumo">
                                     <tr v-for="r in regioes" :key="r['País']">
-                                        <td>{{ r['País'] }}</td>
+                                        <td>{{ r['País'] }}. {{ r[COLUNA_REGIAO] }}</td>
                                         <td><strong>{{ r[COLUNA_QUANTIDADE] }}</strong> {{ r[COLUNA_QUANTIDADE] === 1 ? 'aluno' : 'alunos' }}</td>
                                     </tr>
                                 </table>
@@ -1139,6 +1415,12 @@
                 const direita = this.colunas.find(c => c !== esquerda) || esquerda;
                 return { lados: [{ coluna: esquerda }, { coluna: direita }] };
             },
+            computed: {
+                // "da" ou "do" antes do nome ("da Europa", "do Brasil")
+                preposicao() {
+                    return doNome(this.continente).split(' ')[0];
+                }
+            },
             created() {
                 // Instâncias dos MapaPanel por lado (função ref no
                 // template). Fora do data(): não precisa ser reativo
@@ -1148,7 +1430,7 @@
                 <div class="comparar-panel">
                     <div class="painel-cabecalho comparar-cabecalho">
                         <button class="btn-contorno" @click="$emit('voltar')" title="Volta aos blocos">← Voltar aos blocos</button>
-                        <span class="comparar-titulo">Comparar regionalizações da <strong>{{ continente.nome }}</strong></span>
+                        <span class="comparar-titulo">Comparar regionalizações {{ preposicao }} <strong>{{ continente.nome }}</strong></span>
                     </div>
                     <div class="comparar-mapas">
                         <div class="comparar-lado" v-for="(lado, i) in lados" :key="i">
@@ -1202,7 +1484,13 @@
                     } : null,
                     // Janela de configuração da sala aberta sobre os painéis
                     configurandoSala: false,
-                    paises: [],
+                    // Dados como vieram do arquivo (ou das respostas, na
+                    // sala); paises (computed) acrescenta as colunas
+                    // calculadas
+                    paisesBase: [],
+                    // Colunas novas criadas na tabela completa, na ordem de
+                    // criação: [{ nome, formula }] (veja src/utils/formula.js)
+                    colunasCalculadas: [],
                     paisesISOMapping: {},
                     loading: true,
                     // Coluna da tabela em exibição. Cada coluna tem o seu
@@ -1239,13 +1527,19 @@
                 termos() {
                     return termosDo(this.continente);
                 },
+                // Países com as colunas calculadas: é o que a tabela, os
+                // blocos e os mapas usam
+                paises() {
+                    return aplicarColunas(this.paisesBase, this.colunasCalculadas);
+                },
                 totalRespostas() {
                     return this.sala && this.sala.tabela ? this.sala.tabela.respostas.length : 0;
                 },
-                // Na sala, a quantidade de alunos aparece como "Região" no
-                // seletor de coluna (só o rótulo; a coluna não muda)
+                // Coluna -> nome mostrado no seletor e na tabela completa,
+                // quando difere do nome da coluna. Hoje nenhuma: na sala, a
+                // "Região" virou uma coluna de verdade (src/sala.js)
                 rotulosColunas() {
-                    return this.sala ? { [COLUNA_QUANTIDADE]: 'Região' } : {};
+                    return {};
                 },
                 ordenacaoAtual: {
                     get() {
@@ -1271,7 +1565,7 @@
             },
             async mounted() {
                 if (!this.continente) return;
-                document.title = `Regionalização da ${this.continente.nome} - CLIC Geografia`;
+                document.title = `Regionalização ${doNome(this.continente)} - CLIC Geografia`;
                 definirOrdemValores(this.continente.ordemValores);
                 if (this.sala) {
                     await this.iniciarSala();
@@ -1300,7 +1594,7 @@
                             fetch(`${arquivos.iso}?v=${timestamp}`)
                         ]);
 
-                        this.paises = await resPaises.json();
+                        this.paisesBase = await resPaises.json();
                         this.paisesISOMapping = await resISO.json();
 
                         this.loading = false;
@@ -1318,7 +1612,10 @@
                 async iniciarSala() {
                     // Regiões na ordem da sala (frente para o fundo), não
                     // alfabética, na tabela e no laço
-                    definirOrdemValores({ 'País': REGIOES_SALA.map(r => r.nome) });
+                    definirOrdemValores({
+                        'País': REGIOES_SALA.map(r => r.numero),
+                        [COLUNA_REGIAO]: REGIOES_SALA.map(r => r.nome)
+                    });
                     let pendente = null;
                     try {
                         pendente = JSON.parse(sessionStorage.getItem(CHAVE_PROJETO_PENDENTE) || 'null');
@@ -1383,11 +1680,11 @@
                 // vale mais e ele volta ao cinza
                 recalcularRegioes() {
                     const { regioes, avisos } = montarRegioes(this.sala.tabela, this.sala.pergunta);
-                    const mudou = JSON.stringify(regioes) !== JSON.stringify(this.paises);
+                    const mudou = JSON.stringify(regioes) !== JSON.stringify(this.paisesBase);
                     this.sala.avisos = avisos;
-                    this.paises = regioes;
+                    this.paisesBase = regioes;
                     this.paisesISOMapping = isoDasRegioes();
-                    if (!(this.colunaSelecionada in regioes[0])) this.colunaSelecionada = COLUNA_QUANTIDADE;
+                    if (!(this.colunaSelecionada in this.paises[0])) this.colunaSelecionada = COLUNA_REGIAO;
                     if (mudou && this.$refs.mapa) this.$refs.mapa.resetarMapa();
                 },
                 escolherPerguntaSala(pergunta) {
@@ -1434,6 +1731,7 @@
                         continente: this.continente.id,
                         colunaSelecionada: this.colunaSelecionada,
                         ordenacoes: this.ordenacoes,
+                        colunasCalculadas: this.colunasCalculadas,
                         workspaces: this.$refs.blockly.exportarWorkspaces()
                     };
                     // Sala de aula: as respostas vão junto (o projeto abre
@@ -1475,7 +1773,7 @@
                     const temBlocos = this.temBlocos();
                     if (outro.id !== this.continente.id) {
                         const aviso = temBlocos ? ' Os blocos atuais serão perdidos.' : '';
-                        if (!confirm(`Este projeto é da ${outro.nome}. Trocar para a ${outro.nome} e abrir o projeto?${aviso}`)) {
+                        if (!confirm(`Este projeto é ${doNome(outro)}. Trocar para ${comArtigo(outro)} e abrir o projeto?${aviso}`)) {
                             return;
                         }
                         // A página recarrega no outro continente e abre o
@@ -1492,6 +1790,10 @@
                     if (this.sala && projeto.sala) {
                         this.aplicarDadosSala(projeto.sala);
                     }
+
+                    // Colunas calculadas do projeto (antes de filtrar as
+                    // colunas: os blocos delas também valem)
+                    this.colunasCalculadas = (projeto.colunasCalculadas || []).filter(colunaValida);
 
                     // Colunas que não existem mais nos dados são ignoradas
                     const colunas = Object.keys(this.paises[0] || {});
@@ -1548,6 +1850,25 @@
                         return;
                     }
                     location.href = location.pathname;
+                },
+                // Coluna nova criada na tabela completa ({ nome, formula })
+                adicionarColuna(coluna) {
+                    this.colunasCalculadas.push(coluna);
+                },
+                // Remove uma coluna calculada e as que dependem dela. Se
+                // estava em exibição, volta à primeira coluna
+                removerColuna(nome) {
+                    const removidas = new Set([nome]);
+                    this.colunasCalculadas = this.colunasCalculadas.filter(c => {
+                        const usa = c.formula.some((p, i) => i % 2 === 0 && removidas.has(p.coluna));
+                        if (c.nome === nome || usa) { removidas.add(c.nome); return false; }
+                        return true;
+                    });
+                    for (const c of removidas) delete this.ordenacoes[c];
+                    if (removidas.has(this.colunaSelecionada)) {
+                        this.colunaSelecionada = Object.keys(this.paises[0] || {})
+                            .find(c => c !== 'País' && !c.startsWith('Coordenada')) || null;
+                    }
                 },
                 // Clique numa linha da tabela: seleciona o país e o mapa voa
                 // até ele; clicar de novo na mesma linha volta ao mapa inteiro

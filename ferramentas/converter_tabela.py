@@ -8,7 +8,9 @@ Lê fontes/<id>/tabela.config.json:
       "iso": { "Nome do país": "código ISO", ... } }
 e grava src/assets/data/<id>_paises.json e src/assets/data/<id>_iso.json.
 Textos são aparados; "Indisponível"/"-"/vazio viram null; inteiros gravados
-como 357021.0 viram 357021; IDH fica com 3 casas. Asteriscos no fim do nome
+como 357021.0 viram 357021; IDH fica com 3 casas e os demais números com
+1 (o que arredondaria para 0,0 fica 0,1); a População vira
+"População (Milhões)". Asteriscos no fim do nome
 do país (marca de "transcontinental" em algumas planilhas) são removidos.
 """
 import json, sys
@@ -36,6 +38,7 @@ def main():
         for coluna, valor in zip(cabecalho, linha):
             if coluna in descartar:
                 continue
+            bruto = valor if isinstance(valor, (int, float)) else 0
             if isinstance(valor, str):
                 valor = valor.strip()
                 if coluna == 'País':
@@ -43,7 +46,19 @@ def main():
                 if valor.lower() in AUSENTE:
                     valor = None
             elif isinstance(valor, float):
-                valor = int(valor) if valor.is_integer() and coluna != 'IDH' else round(valor, 3)
+                if coluna == 'IDH':
+                    valor = round(valor, 3)
+                else:
+                    valor = round(valor, 1)
+                    valor = int(valor) if valor.is_integer() and coluna != 'População' else valor
+            if coluna == 'População':
+                # A ferramenta mostra a população em milhões (1 casa)
+                coluna = 'População (Milhões)'
+                if isinstance(valor, (int, float)):
+                    valor = round(valor / 1e6, 1)
+            # Valores pequenos que arredondariam para 0,0 ficam com 0,1
+            if coluna != 'IDH' and valor == 0 and bruto:
+                valor = 0.1
             pais[coluna] = valor
         paises.append(pais)
 

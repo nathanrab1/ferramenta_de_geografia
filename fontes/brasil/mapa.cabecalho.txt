@@ -1,0 +1,3 @@
+<!-- Mapa do Brasil para a Ferramenta de Regionalização (CLIC).
+     Cada estado é um elemento com id = sigla da UF em minúsculas (sp, rj...).
+     Derivado de "Brazil Blank Map" (Wikimedia Commons). -->

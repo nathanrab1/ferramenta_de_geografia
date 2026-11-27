@@ -10,7 +10,7 @@
     "IDH": 0.958,
     "PIB (Bilhões de Dolares)": 2124,
     "Área (km²)": 7741220,
-    "População": 28077000
+    "População (Milhões)": 28.1
   },
   {
     "País": "Fiji",
@@ -21,9 +21,9 @@
     "Esporte mais popular": "Rugby",
     "Economia": "Economia baseada no turismo, açúcar e remessas de emigrantes",
     "IDH": 0.731,
-    "PIB (Bilhões de Dolares)": 6.352,
+    "PIB (Bilhões de Dolares)": 6.4,
     "Área (km²)": 18274,
-    "População": 934000
+    "População (Milhões)": 0.9
   },
   {
     "País": "Ilhas Marshall",
@@ -34,9 +34,9 @@
     "Esporte mais popular": "Basquete",
     "Economia": "Economia dependente de ajuda dos EUA, pesca e registro de navios",
     "IDH": 0.733,
-    "PIB (Bilhões de Dolares)": 0.342,
+    "PIB (Bilhões de Dolares)": 0.3,
     "Área (km²)": 181,
-    "População": 35300
+    "População (Milhões)": 0.1
   },
   {
     "País": "Ilhas Salomão",
@@ -47,9 +47,9 @@
     "Esporte mais popular": "Futebol",
     "Economia": "Economia agrícola, extração de madeira e pesca",
     "IDH": 0.584,
-    "PIB (Bilhões de Dolares)": 1.836,
+    "PIB (Bilhões de Dolares)": 1.8,
     "Área (km²)": 28896,
-    "População": 813000
+    "População (Milhões)": 0.8
   },
   {
     "País": "Kiribati",
@@ -60,9 +60,9 @@
     "Esporte mais popular": "Futebol",
     "Economia": "Economia baseada em licenças de pesca, ajuda externa e copra",
     "IDH": 0.644,
-    "PIB (Bilhões de Dolares)": 0.401,
+    "PIB (Bilhões de Dolares)": 0.4,
     "Área (km²)": 811,
-    "População": 131000
+    "População (Milhões)": 0.1
   },
   {
     "País": "Micronésia",
@@ -73,9 +73,9 @@
     "Esporte mais popular": "Basquete",
     "Economia": "Economia dependente de ajuda dos EUA, pesca e agricultura de subsistência",
     "IDH": 0.615,
-    "PIB (Bilhões de Dolares)": 0.521,
+    "PIB (Bilhões de Dolares)": 0.5,
     "Área (km²)": 702,
-    "População": 94500
+    "População (Milhões)": 0.1
   },
   {
     "País": "Nauru",
@@ -86,9 +86,9 @@
     "Esporte mais popular": "Futebol australiano",
     "Economia": "Economia baseada em ajuda externa, fosfato (quase esgotado) e licenças de pesca",
     "IDH": 0.703,
-    "PIB (Bilhões de Dolares)": 0.196,
+    "PIB (Bilhões de Dolares)": 0.2,
     "Área (km²)": 21,
-    "População": 12200
+    "População (Milhões)": 0.1
   },
   {
     "País": "Nova Zelândia",
@@ -101,7 +101,7 @@
     "IDH": 0.938,
     "PIB (Bilhões de Dolares)": 278.6,
     "Área (km²)": 268838,
-    "População": 5356000
+    "População (Milhões)": 5.4
   },
   {
     "País": "Palau",
@@ -112,9 +112,9 @@
     "Esporte mais popular": "Beisebol",
     "Economia": "Economia baseada no turismo e ajuda dos EUA",
     "IDH": 0.786,
-    "PIB (Bilhões de Dolares)": 0.377,
+    "PIB (Bilhões de Dolares)": 0.4,
     "Área (km²)": 459,
-    "População": 17500
+    "População (Milhões)": 0.1
   },
   {
     "País": "Papua-Nova Guiné",
@@ -127,7 +127,7 @@
     "IDH": 0.576,
     "PIB (Bilhões de Dolares)": 34.4,
     "Área (km²)": 462840,
-    "População": 13071000
+    "População (Milhões)": 13.1
   },
   {
     "País": "Samoa",
@@ -138,9 +138,9 @@
     "Esporte mais popular": "Rugby",
     "Economia": "Economia baseada em remessas de emigrantes, turismo e agricultura",
     "IDH": 0.708,
-    "PIB (Bilhões de Dolares)": 1.376,
+    "PIB (Bilhões de Dolares)": 1.4,
     "Área (km²)": 2831,
-    "População": 213000
+    "População (Milhões)": 0.2
   },
   {
     "País": "Tonga",
@@ -151,9 +151,9 @@
     "Esporte mais popular": "Rugby",
     "Economia": "Economia baseada em remessas de emigrantes, agricultura e pesca",
     "IDH": 0.769,
-    "PIB (Bilhões de Dolares)": 0.716,
+    "PIB (Bilhões de Dolares)": 0.7,
     "Área (km²)": 747,
-    "População": 98900
+    "População (Milhões)": 0.1
   },
   {
     "País": "Tuvalu",
@@ -164,9 +164,9 @@
     "Esporte mais popular": "Futebol",
     "Economia": "Economia baseada em licenças de pesca, venda do domínio \".tv\" e ajuda externa",
     "IDH": 0.689,
-    "PIB (Bilhões de Dolares)": 0.065,
+    "PIB (Bilhões de Dolares)": 0.1,
     "Área (km²)": 26,
-    "População": 9900
+    "População (Milhões)": 0.1
   },
   {
     "País": "Vanuatu",
@@ -177,8 +177,8 @@
     "Esporte mais popular": "Futebol",
     "Economia": "Economia baseada no turismo, agricultura (copra) e serviços financeiros",
     "IDH": 0.621,
-    "PIB (Bilhões de Dolares)": 1.396,
+    "PIB (Bilhões de Dolares)": 1.4,
     "Área (km²)": 12189,
-    "População": 342000
+    "População (Milhões)": 0.3
   }
 ]

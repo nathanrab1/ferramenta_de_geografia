@@ -8,9 +8,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Lek",
     "IDH": 0.795,
-    "PIB (Bilhões de Dolares)": 22.98,
+    "PIB (Bilhões de Dolares)": 23.0,
     "Área (km²)": 28748,
-    "População": 3600523
+    "População (Milhões)": 3.6
   },
   {
     "País": "Alemanha",
@@ -23,7 +23,7 @@
     "IDH": 0.947,
     "PIB (Bilhões de Dolares)": 4456,
     "Área (km²)": 357021,
-    "População": 83251851
+    "População (Milhões)": 83.3
   },
   {
     "País": "Andorra",
@@ -34,9 +34,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.868,
-    "PIB (Bilhões de Dolares)": 3.73,
+    "PIB (Bilhões de Dolares)": 3.7,
     "Área (km²)": 468,
-    "População": 68403
+    "População (Milhões)": 0.1
   },
   {
     "País": "Armênia",
@@ -47,9 +47,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Dram",
     "IDH": 0.776,
-    "PIB (Bilhões de Dolares)": 25.41,
+    "PIB (Bilhões de Dolares)": 25.4,
     "Área (km²)": 29800,
-    "População": 3229900
+    "População (Milhões)": 3.2
   },
   {
     "País": "Áustria",
@@ -62,7 +62,7 @@
     "IDH": 0.922,
     "PIB (Bilhões de Dolares)": 516,
     "Área (km²)": 83858,
-    "População": 8169929
+    "População (Milhões)": 8.2
   },
   {
     "País": "Azerbaijão",
@@ -73,9 +73,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Manate",
     "IDH": 0.756,
-    "PIB (Bilhões de Dolares)": 69.16,
+    "PIB (Bilhões de Dolares)": 69.2,
     "Área (km²)": 86600,
-    "População": 8621000
+    "População (Milhões)": 8.6
   },
   {
     "País": "Bélgica",
@@ -88,7 +88,7 @@
     "IDH": 0.931,
     "PIB (Bilhões de Dolares)": 632,
     "Área (km²)": 30510,
-    "População": 10274595
+    "População (Milhões)": 10.3
   },
   {
     "País": "Bielorrússia",
@@ -99,9 +99,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Rublo",
     "IDH": 0.823,
-    "PIB (Bilhões de Dolares)": 71.86,
+    "PIB (Bilhões de Dolares)": 71.9,
     "Área (km²)": 207600,
-    "População": 10335382
+    "População (Milhões)": 10.3
   },
   {
     "País": "Bósnia e Herzegovina",
@@ -112,9 +112,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Marco",
     "IDH": 0.78,
-    "PIB (Bilhões de Dolares)": 27.05,
+    "PIB (Bilhões de Dolares)": 27.1,
     "Área (km²)": 51129,
-    "População": 4448500
+    "População (Milhões)": 4.4
   },
   {
     "País": "Bulgária",
@@ -127,7 +127,7 @@
     "IDH": 0.816,
     "PIB (Bilhões de Dolares)": 102,
     "Área (km²)": 110910,
-    "População": 7621337
+    "População (Milhões)": 7.6
   },
   {
     "País": "Chipre",
@@ -138,9 +138,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.887,
-    "PIB (Bilhões de Dolares)": 32.23,
+    "PIB (Bilhões de Dolares)": 32.2,
     "Área (km²)": 9251,
-    "População": 788457
+    "População (Milhões)": 0.8
   },
   {
     "País": "Croácia",
@@ -151,9 +151,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.851,
-    "PIB (Bilhões de Dolares)": 82.69,
+    "PIB (Bilhões de Dolares)": 82.7,
     "Área (km²)": 56542,
-    "População": 4437460
+    "População (Milhões)": 4.4
   },
   {
     "País": "Dinamarca",
@@ -166,7 +166,7 @@
     "IDH": 0.94,
     "PIB (Bilhões de Dolares)": 404,
     "Área (km²)": 43094,
-    "População": 5368854
+    "População (Milhões)": 5.4
   },
   {
     "País": "Eslováquia",
@@ -179,7 +179,7 @@
     "IDH": 0.86,
     "PIB (Bilhões de Dolares)": 133,
     "Área (km²)": 48845,
-    "População": 5422366
+    "População (Milhões)": 5.4
   },
   {
     "País": "Eslovênia",
@@ -190,9 +190,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.917,
-    "PIB (Bilhões de Dolares)": 68.22,
+    "PIB (Bilhões de Dolares)": 68.2,
     "Área (km²)": 20273,
-    "População": 1932917
+    "População (Milhões)": 1.9
   },
   {
     "País": "Espanha",
@@ -205,7 +205,7 @@
     "IDH": 0.904,
     "PIB (Bilhões de Dolares)": 1581,
     "Área (km²)": 504851,
-    "População": 45061274
+    "População (Milhões)": 45.1
   },
   {
     "País": "Estônia",
@@ -216,9 +216,9 @@
     "Esporte mais popular": "Basquete",
     "Moeda": "Euro",
     "IDH": 0.892,
-    "PIB (Bilhões de Dolares)": 40.74,
+    "PIB (Bilhões de Dolares)": 40.7,
     "Área (km²)": 45226,
-    "População": 1415681
+    "População (Milhões)": 1.4
   },
   {
     "País": "Finlândia",
@@ -231,7 +231,7 @@
     "IDH": 0.938,
     "PIB (Bilhões de Dolares)": 300,
     "Área (km²)": 336593,
-    "População": 5157537
+    "População (Milhões)": 5.2
   },
   {
     "País": "França",
@@ -244,7 +244,7 @@
     "IDH": 0.901,
     "PIB (Bilhões de Dolares)": 3031,
     "Área (km²)": 547030,
-    "População": 59765983
+    "População (Milhões)": 59.8
   },
   {
     "País": "Geórgia",
@@ -257,7 +257,7 @@
     "IDH": 0.812,
     "PIB (Bilhões de Dolares)": 238,
     "Área (km²)": 69700,
-    "População": 4661473
+    "População (Milhões)": 4.7
   },
   {
     "País": "Grécia",
@@ -270,7 +270,7 @@
     "IDH": 0.888,
     "PIB (Bilhões de Dolares)": 238,
     "Área (km²)": 131940,
-    "População": 10645343
+    "População (Milhões)": 10.6
   },
   {
     "País": "Hungria",
@@ -283,7 +283,7 @@
     "IDH": 0.854,
     "PIB (Bilhões de Dolares)": 212,
     "Área (km²)": 93030,
-    "População": 10075034
+    "População (Milhões)": 10.1
   },
   {
     "País": "Irlanda",
@@ -296,7 +296,7 @@
     "IDH": 0.955,
     "PIB (Bilhões de Dolares)": 546,
     "Área (km²)": 70280,
-    "População": 4234925
+    "População (Milhões)": 4.2
   },
   {
     "País": "Islândia",
@@ -307,9 +307,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Coroa",
     "IDH": 0.949,
-    "PIB (Bilhões de Dolares)": 31.02,
+    "PIB (Bilhões de Dolares)": 31.0,
     "Área (km²)": 103000,
-    "População": 307261
+    "População (Milhões)": 0.3
   },
   {
     "País": "Itália",
@@ -322,7 +322,7 @@
     "IDH": 0.892,
     "PIB (Bilhões de Dolares)": 2255,
     "Área (km²)": 301230,
-    "População": 58751711
+    "População (Milhões)": 58.8
   },
   {
     "País": "Kosovo",
@@ -333,9 +333,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.739,
-    "PIB (Bilhões de Dolares)": 10.44,
+    "PIB (Bilhões de Dolares)": 10.4,
     "Área (km²)": 10887,
-    "População": 1810366
+    "População (Milhões)": 1.8
   },
   {
     "País": "Letônia",
@@ -346,9 +346,9 @@
     "Esporte mais popular": "Hoquei",
     "Moeda": "Euro",
     "IDH": 0.866,
-    "PIB (Bilhões de Dolares)": 43.63,
+    "PIB (Bilhões de Dolares)": 43.6,
     "Área (km²)": 64589,
-    "População": 2366515
+    "População (Milhões)": 2.4
   },
   {
     "País": "Liechtenstein",
@@ -361,7 +361,7 @@
     "IDH": 0.919,
     "PIB (Bilhões de Dolares)": 7.1,
     "Área (km²)": 160,
-    "População": 32842
+    "População (Milhões)": 0.1
   },
   {
     "País": "Lituânia",
@@ -372,9 +372,9 @@
     "Esporte mais popular": "Basquete",
     "Moeda": "Euro",
     "IDH": 0.882,
-    "PIB (Bilhões de Dolares)": 77.84,
+    "PIB (Bilhões de Dolares)": 77.8,
     "Área (km²)": 65200,
-    "População": 3601138
+    "População (Milhões)": 3.6
   },
   {
     "País": "Luxemburgo",
@@ -385,9 +385,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.916,
-    "PIB (Bilhões de Dolares)": 85.76,
+    "PIB (Bilhões de Dolares)": 85.8,
     "Área (km²)": 2586,
-    "População": 448569
+    "População (Milhões)": 0.4
   },
   {
     "País": "Macedônia do Norte",
@@ -398,9 +398,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Denar",
     "IDH": 0.774,
-    "PIB (Bilhões de Dolares)": 14.76,
+    "PIB (Bilhões de Dolares)": 14.8,
     "Área (km²)": 25333,
-    "População": 2054800
+    "População (Milhões)": 2.1
   },
   {
     "País": "Malta",
@@ -411,9 +411,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.895,
-    "PIB (Bilhões de Dolares)": 20.96,
+    "PIB (Bilhões de Dolares)": 21.0,
     "Área (km²)": 316,
-    "População": 397499
+    "População (Milhões)": 0.4
   },
   {
     "País": "Moldávia",
@@ -424,9 +424,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Leu",
     "IDH": 0.75,
-    "PIB (Bilhões de Dolares)": 16.54,
+    "PIB (Bilhões de Dolares)": 16.5,
     "Área (km²)": 33843,
-    "População": 4434547
+    "População (Milhões)": 4.4
   },
   {
     "País": "Mônaco",
@@ -437,9 +437,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.96,
-    "PIB (Bilhões de Dolares)": 8.78,
-    "Área (km²)": 1.95,
-    "População": 31987
+    "PIB (Bilhões de Dolares)": 8.8,
+    "Área (km²)": 1.9,
+    "População (Milhões)": 0.1
   },
   {
     "País": "Montenegro",
@@ -452,7 +452,7 @@
     "IDH": 0.829,
     "PIB (Bilhões de Dolares)": 7.4,
     "Área (km²)": 13812,
-    "População": 616258
+    "População (Milhões)": 0.6
   },
   {
     "País": "Noruega",
@@ -465,7 +465,7 @@
     "IDH": 0.957,
     "PIB (Bilhões de Dolares)": 486,
     "Área (km²)": 324220,
-    "População": 4525116
+    "População (Milhões)": 4.5
   },
   {
     "País": "Países Baixos",
@@ -478,7 +478,7 @@
     "IDH": 0.944,
     "PIB (Bilhões de Dolares)": 1118,
     "Área (km²)": 41526,
-    "População": 16318199
+    "População (Milhões)": 16.3
   },
   {
     "País": "Polônia",
@@ -491,7 +491,7 @@
     "IDH": 0.88,
     "PIB (Bilhões de Dolares)": 811,
     "Área (km²)": 312685,
-    "População": 38625478
+    "População (Milhões)": 38.6
   },
   {
     "País": "Portugal",
@@ -504,7 +504,7 @@
     "IDH": 0.864,
     "PIB (Bilhões de Dolares)": 287,
     "Área (km²)": 91568,
-    "População": 10409995
+    "População (Milhões)": 10.4
   },
   {
     "País": "Reino Unido",
@@ -517,7 +517,7 @@
     "IDH": 0.932,
     "PIB (Bilhões de Dolares)": 3340,
     "Área (km²)": 244820,
-    "População": 61100835
+    "População (Milhões)": 61.1
   },
   {
     "País": "República Tcheca",
@@ -530,7 +530,7 @@
     "IDH": 0.9,
     "PIB (Bilhões de Dolares)": 331,
     "Área (km²)": 78866,
-    "População": 10256760
+    "População (Milhões)": 10.3
   },
   {
     "País": "Romênia",
@@ -543,7 +543,7 @@
     "IDH": 0.828,
     "PIB (Bilhões de Dolares)": 351,
     "Área (km²)": 238391,
-    "População": 21698181
+    "População (Milhões)": 21.7
   },
   {
     "País": "Rússia",
@@ -556,7 +556,7 @@
     "IDH": 0.824,
     "PIB (Bilhões de Dolares)": 2021,
     "Área (km²)": 17075400,
-    "População": 142200000
+    "População (Milhões)": 142.2
   },
   {
     "País": "San Marino",
@@ -567,9 +567,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": 0.961,
-    "PIB (Bilhões de Dolares)": 1.67,
+    "PIB (Bilhões de Dolares)": 1.7,
     "Área (km²)": 61,
-    "População": 27730
+    "População (Milhões)": 0.1
   },
   {
     "País": "Sérvia",
@@ -580,9 +580,9 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Dinar",
     "IDH": 0.806,
-    "PIB (Bilhões de Dolares)": 75.19,
+    "PIB (Bilhões de Dolares)": 75.2,
     "Área (km²)": 88361,
-    "População": 7495742
+    "População (Milhões)": 7.5
   },
   {
     "País": "Suécia",
@@ -595,7 +595,7 @@
     "IDH": 0.945,
     "PIB (Bilhões de Dolares)": 593,
     "Área (km²)": 449964,
-    "População": 9090113
+    "População (Milhões)": 9.1
   },
   {
     "País": "Suíça",
@@ -608,7 +608,7 @@
     "IDH": 0.955,
     "PIB (Bilhões de Dolares)": 885,
     "Área (km²)": 41290,
-    "População": 7507000
+    "População (Milhões)": 7.5
   },
   {
     "País": "Turquia",
@@ -621,7 +621,7 @@
     "IDH": 0.82,
     "PIB (Bilhões de Dolares)": 1108,
     "Área (km²)": 783562,
-    "População": 71517100
+    "População (Milhões)": 71.5
   },
   {
     "País": "Ucrânia",
@@ -634,7 +634,7 @@
     "IDH": 0.779,
     "PIB (Bilhões de Dolares)": 179,
     "Área (km²)": 603700,
-    "População": 48396470
+    "População (Milhões)": 48.4
   },
   {
     "País": "Vaticano",
@@ -645,8 +645,8 @@
     "Esporte mais popular": "Futebol",
     "Moeda": "Euro",
     "IDH": null,
-    "PIB (Bilhões de Dolares)": 0.02,
-    "Área (km²)": 0.44,
-    "População": 900
+    "PIB (Bilhões de Dolares)": 0.1,
+    "Área (km²)": 0.4,
+    "População (Milhões)": 0.1
   }
 ]

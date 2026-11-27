@@ -65,7 +65,7 @@ export default {
     template: `
         <div class="panel blockly-panel">
             <div class="painel-cabecalho blockly-titulo">
-                <button class="btn-contorno btn-continentes" @click="$emit('trocar-continente')" title="Voltar à escolha de continente">{{ continente.icone }} {{ continente.nome }}</button>
+                <button class="btn-contorno btn-continentes" @click="$emit('trocar-continente')" title="Voltar à escolha de continente">{{ continente.nome }}</button>
                 <span class="blockly-titulo-texto">Regionalização por: <strong>{{ rotulo }}</strong></span>
                 <span class="projeto-botoes">
                     <button class="btn-contorno" @click="$emit('baixar-projeto')" title="Salva os blocos de todas as colunas em um arquivo .json">💾 Baixar projeto</button>
@@ -422,6 +422,10 @@ export default {
             // "Blocks not on same workspace" (blocos nao encaixam).
             this.workspace = markRaw(Blockly.inject('blocklyDiv', {
                 toolbox: this.toolboxPara(this.colunaAtual),
+                // Imagens dos controles (zoom, centralizar, lixeira). O
+                // padrão do Blockly (blockly-demo.appspot.com) saiu do ar;
+                // usa as do mesmo pacote carregado no index.html
+                media: 'https://unpkg.com/blockly@10/media/',
                 // Biblioteca de blocos no topo, com os blocos lado a lado
                 horizontalLayout: true,
                 toolboxPosition: 'start',

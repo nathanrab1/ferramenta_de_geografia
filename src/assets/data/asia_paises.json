@@ -10,7 +10,7 @@
     "IDH": 0.511,
     "PIB (Bilhões de Dolares)": 14.8,
     "Área (km²)": 652230,
-    "População": 45567222
+    "População (Milhões)": 45.6
   },
   {
     "País": "Arábia Saudita",
@@ -23,7 +23,7 @@
     "IDH": 0.854,
     "PIB (Bilhões de Dolares)": 833.5,
     "Área (km²)": 2149690,
-    "População": 39332467
+    "População (Milhões)": 39.3
   },
   {
     "País": "Armênia",
@@ -36,7 +36,7 @@
     "IDH": 0.776,
     "PIB (Bilhões de Dolares)": 19.5,
     "Área (km²)": 29743,
-    "População": 3021995
+    "População (Milhões)": 3.0
   },
   {
     "País": "Azerbaijão",
@@ -49,7 +49,7 @@
     "IDH": 0.756,
     "PIB (Bilhões de Dolares)": 57.3,
     "Área (km²)": 86600,
-    "População": 10915062
+    "População (Milhões)": 10.9
   },
   {
     "País": "Bahrein",
@@ -62,7 +62,7 @@
     "IDH": 0.852,
     "PIB (Bilhões de Dolares)": 44.4,
     "Área (km²)": 760,
-    "População": 1845330
+    "População (Milhões)": 1.8
   },
   {
     "País": "Bangladesh",
@@ -75,7 +75,7 @@
     "IDH": 0.632,
     "PIB (Bilhões de Dolares)": 460.2,
     "Área (km²)": 147570,
-    "População": 175349988
+    "População (Milhões)": 175.3
   },
   {
     "País": "Brunei",
@@ -88,7 +88,7 @@
     "IDH": 0.838,
     "PIB (Bilhões de Dolares)": 15.1,
     "Área (km²)": 5765,
-    "População": 472838
+    "População (Milhões)": 0.5
   },
   {
     "País": "Butão",
@@ -101,7 +101,7 @@
     "IDH": 0.654,
     "PIB (Bilhões de Dolares)": 2.5,
     "Área (km²)": 38394,
-    "População": 833217
+    "População (Milhões)": 0.8
   },
   {
     "País": "Camboja",
@@ -114,7 +114,7 @@
     "IDH": 0.594,
     "PIB (Bilhões de Dolares)": 27.2,
     "Área (km²)": 181035,
-    "População": 18192018
+    "População (Milhões)": 18.2
   },
   {
     "País": "Catar",
@@ -127,7 +127,7 @@
     "IDH": 0.848,
     "PIB (Bilhões de Dolares)": 236,
     "Área (km²)": 11586,
-    "População": 3707392
+    "População (Milhões)": 3.7
   },
   {
     "País": "Cazaquistão",
@@ -140,7 +140,7 @@
     "IDH": 0.825,
     "PIB (Bilhões de Dolares)": 220.4,
     "Área (km²)": 2724900,
-    "População": 20366132
+    "População (Milhões)": 20.4
   },
   {
     "País": "China",
@@ -153,7 +153,7 @@
     "IDH": 0.761,
     "PIB (Bilhões de Dolares)": 17734.1,
     "Área (km²)": 9596960,
-    "População": 1479142139
+    "População (Milhões)": 1479.1
   },
   {
     "País": "Chipre",
@@ -166,7 +166,7 @@
     "IDH": 0.887,
     "PIB (Bilhões de Dolares)": 27.9,
     "Área (km²)": 9251,
-    "População": 1279040
+    "População (Milhões)": 1.3
   },
   {
     "País": "Coreia do Norte",
@@ -179,7 +179,7 @@
     "IDH": 0.65,
     "PIB (Bilhões de Dolares)": 40,
     "Área (km²)": 120538,
-    "População": 26503047
+    "População (Milhões)": 26.5
   },
   {
     "País": "Coreia do Sul",
@@ -192,7 +192,7 @@
     "IDH": 0.916,
     "PIB (Bilhões de Dolares)": 1810,
     "Área (km²)": 100210,
-    "População": 52670847
+    "População (Milhões)": 52.7
   },
   {
     "País": "Egito",
@@ -205,7 +205,7 @@
     "IDH": 0.707,
     "PIB (Bilhões de Dolares)": 469.8,
     "Área (km²)": 1001450,
-    "População": 109262178
+    "População (Milhões)": 109.3
   },
   {
     "País": "Emirados Árabes Unidos",
@@ -218,7 +218,7 @@
     "IDH": 0.89,
     "PIB (Bilhões de Dolares)": 507.5,
     "Área (km²)": 83600,
-    "População": 10934907
+    "População (Milhões)": 10.9
   },
   {
     "País": "Filipinas",
@@ -231,7 +231,7 @@
     "IDH": 0.718,
     "PIB (Bilhões de Dolares)": 394.1,
     "Área (km²)": 300000,
-    "População": 118988398
+    "População (Milhões)": 119.0
   },
   {
     "País": "Geórgia",
@@ -244,7 +244,7 @@
     "IDH": 0.812,
     "PIB (Bilhões de Dolares)": 24.6,
     "Área (km²)": 69700,
-    "População": 3725660
+    "População (Milhões)": 3.7
   },
   {
     "País": "Iêmen",
@@ -257,7 +257,7 @@
     "IDH": 0.47,
     "PIB (Bilhões de Dolares)": 21.6,
     "Área (km²)": 527968,
-    "População": 34065766
+    "População (Milhões)": 34.1
   },
   {
     "País": "Índia",
@@ -270,7 +270,7 @@
     "IDH": 0.645,
     "PIB (Bilhões de Dolares)": 3737.9,
     "Área (km²)": 3287263,
-    "População": 1474301022
+    "População (Milhões)": 1474.3
   },
   {
     "País": "Indonésia",
@@ -283,7 +283,7 @@
     "IDH": 0.718,
     "PIB (Bilhões de Dolares)": 1319.1,
     "Área (km²)": 1904569,
-    "População": 292415442
+    "População (Milhões)": 292.4
   },
   {
     "País": "Irã",
@@ -296,7 +296,7 @@
     "IDH": 0.783,
     "PIB (Bilhões de Dolares)": 231,
     "Área (km²)": 1648195,
-    "População": 89632818
+    "População (Milhões)": 89.6
   },
   {
     "País": "Iraque",
@@ -309,7 +309,7 @@
     "IDH": 0.674,
     "PIB (Bilhões de Dolares)": 264.2,
     "Área (km²)": 438317,
-    "População": 47823554
+    "População (Milhões)": 47.8
   },
   {
     "País": "Israel",
@@ -322,7 +322,7 @@
     "IDH": 0.919,
     "PIB (Bilhões de Dolares)": 481.6,
     "Área (km²)": 20770,
-    "População": 9430039
+    "População (Milhões)": 9.4
   },
   {
     "País": "Japão",
@@ -335,7 +335,7 @@
     "IDH": 0.919,
     "PIB (Bilhões de Dolares)": 4937.4,
     "Área (km²)": 377930,
-    "População": 125821628
+    "População (Milhões)": 125.8
   },
   {
     "País": "Jordânia",
@@ -348,7 +348,7 @@
     "IDH": 0.729,
     "PIB (Bilhões de Dolares)": 47.7,
     "Área (km²)": 89342,
-    "População": 12042167
+    "População (Milhões)": 12.0
   },
   {
     "País": "Kuwait",
@@ -361,7 +361,7 @@
     "IDH": 0.806,
     "PIB (Bilhões de Dolares)": 134.6,
     "Área (km²)": 17818,
-    "População": 5529451
+    "População (Milhões)": 5.5
   },
   {
     "País": "Laos",
@@ -374,7 +374,7 @@
     "IDH": 0.613,
     "PIB (Bilhões de Dolares)": 19.1,
     "Área (km²)": 236800,
-    "População": 7929366
+    "População (Milhões)": 7.9
   },
   {
     "País": "Líbano",
@@ -387,7 +387,7 @@
     "IDH": 0.744,
     "PIB (Bilhões de Dolares)": 18.1,
     "Área (km²)": 10452,
-    "População": 9494642
+    "População (Milhões)": 9.5
   },
   {
     "País": "Malásia",
@@ -400,7 +400,7 @@
     "IDH": 0.81,
     "PIB (Bilhões de Dolares)": 432.3,
     "Área (km²)": 329847,
-    "População": 35022003
+    "População (Milhões)": 35.0
   },
   {
     "País": "Maldivas",
@@ -413,7 +413,7 @@
     "IDH": 0.74,
     "PIB (Bilhões de Dolares)": 6.2,
     "Área (km²)": 298,
-    "População": 592373
+    "População (Milhões)": 0.6
   },
   {
     "País": "Mianmar",
@@ -426,7 +426,7 @@
     "IDH": 0.583,
     "PIB (Bilhões de Dolares)": 65.7,
     "Área (km²)": 676578,
-    "População": 56797679
+    "População (Milhões)": 56.8
   },
   {
     "País": "Mongólia",
@@ -439,7 +439,7 @@
     "IDH": 0.737,
     "PIB (Bilhões de Dolares)": 15.1,
     "Área (km²)": 1564110,
-    "População": 3585968
+    "População (Milhões)": 3.6
   },
   {
     "País": "Nepal",
@@ -452,7 +452,7 @@
     "IDH": 0.602,
     "PIB (Bilhões de Dolares)": 36.3,
     "Área (km²)": 147181,
-    "População": 30867123
+    "População (Milhões)": 30.9
   },
   {
     "País": "Omã",
@@ -465,7 +465,7 @@
     "IDH": 0.813,
     "PIB (Bilhões de Dolares)": 104,
     "Área (km²)": 309500,
-    "População": 7939820
+    "População (Milhões)": 7.9
   },
   {
     "País": "Palestina",
@@ -478,7 +478,7 @@
     "IDH": 0.708,
     "PIB (Bilhões de Dolares)": 18.1,
     "Área (km²)": 6020,
-    "População": 5879555
+    "População (Milhões)": 5.9
   },
   {
     "País": "Paquistão",
@@ -491,7 +491,7 @@
     "IDH": 0.557,
     "PIB (Bilhões de Dolares)": 347,
     "Área (km²)": 881913,
-    "População": 246168962
+    "População (Milhões)": 246.2
   },
   {
     "País": "Quirguistão",
@@ -504,7 +504,7 @@
     "IDH": 0.697,
     "PIB (Bilhões de Dolares)": 8.5,
     "Área (km²)": 199951,
-    "População": 7106846
+    "População (Milhões)": 7.1
   },
   {
     "País": "Rússia",
@@ -517,7 +517,7 @@
     "IDH": 0.824,
     "PIB (Bilhões de Dolares)": 1829,
     "Área (km²)": 17098242,
-    "População": 144444359
+    "População (Milhões)": 144.4
   },
   {
     "País": "Singapura",
@@ -530,7 +530,7 @@
     "IDH": 0.938,
     "PIB (Bilhões de Dolares)": 396.9,
     "Área (km²)": 719,
-    "População": 6508015
+    "População (Milhões)": 6.5
   },
   {
     "País": "Síria",
@@ -543,7 +543,7 @@
     "IDH": 0.567,
     "PIB (Bilhões de Dolares)": 40.4,
     "Área (km²)": 185180,
-    "População": 15182921
+    "População (Milhões)": 15.2
   },
   {
     "País": "Sri Lanka",
@@ -556,7 +556,7 @@
     "IDH": 0.782,
     "PIB (Bilhões de Dolares)": 84,
     "Área (km²)": 65610,
-    "População": 21984623
+    "População (Milhões)": 22.0
   },
   {
     "País": "Tailândia",
@@ -569,7 +569,7 @@
     "IDH": 0.777,
     "PIB (Bilhões de Dolares)": 534.8,
     "Área (km²)": 513120,
-    "População": 71217763
+    "População (Milhões)": 71.2
   },
   {
     "País": "Tajiquistão",
@@ -582,7 +582,7 @@
     "IDH": 0.668,
     "PIB (Bilhões de Dolares)": 8.1,
     "Área (km²)": 143100,
-    "População": 10694662
+    "População (Milhões)": 10.7
   },
   {
     "País": "Timor-Leste",
@@ -595,7 +595,7 @@
     "IDH": 0.606,
     "PIB (Bilhões de Dolares)": 1.7,
     "Área (km²)": 14874,
-    "População": 1483871
+    "População (Milhões)": 1.5
   },
   {
     "País": "Turcomenistão",
@@ -608,7 +608,7 @@
     "IDH": 0.715,
     "PIB (Bilhões de Dolares)": 45.2,
     "Área (km²)": 488100,
-    "População": 6432486
+    "População (Milhões)": 6.4
   },
   {
     "País": "Turquia",
@@ -621,7 +621,7 @@
     "IDH": 0.82,
     "PIB (Bilhões de Dolares)": 819,
     "Área (km²)": 783562,
-    "População": 92226850
+    "População (Milhões)": 92.2
   },
   {
     "País": "Uzbequistão",
@@ -634,7 +634,7 @@
     "IDH": 0.72,
     "PIB (Bilhões de Dolares)": 69.2,
     "Área (km²)": 447400,
-    "População": 36146385
+    "População (Milhões)": 36.1
   },
   {
     "País": "Vietnã",
@@ -647,6 +647,6 @@
     "IDH": 0.703,
     "PIB (Bilhões de Dolares)": 408.8,
     "Área (km²)": 331210,
-    "População": 103225447
+    "População (Milhões)": 103.2
   }
 ]

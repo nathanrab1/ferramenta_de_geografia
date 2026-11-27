@@ -89,6 +89,22 @@ python3 ferramentas/converter_tabela.py <id> "fontes/<id>/planilha.xlsx"   # usa
 python3 ferramentas/converter_mapa.py <id> "fontes/<id>/mapa-bruto.svg"    # usa fontes/<id>/mapa.config.js
 ```
 
+Os cartões da tela inicial mostram uma miniatura de cada mapa (`src/assets/miniaturas/<id>.png`,
+só os países da tabela, recortados e coloridos pela coluna de região que o mapa abre por padrão,
+com as mesmas cores na mesma ordem em todos os mapas; na sala, cada carteira na cor da sua região). Depois de criar ou mudar um mapa, gere de novo:
+
+```bash
+python3 ferramentas/gerar_miniaturas.py [id ...]    # sem ids: todos os mapas
+```
+
+Lagos que no mapa são buracos (o espaço entre os países, como os Grandes Lagos da África) mostram o
+fundo branco. `ferramentas/gerar_lagos.py <id>` acha esses buracos e grava a água em `src/lagos/<id>.js`,
+que o `prepararMapa` do mapa põe atrás dos países (veja a África em `src/continentes.js`).
+
+O Brasil (`?continente=brasil`) segue o mesmo esquema: cada estado é uma linha (chave `"País"`, com
+"Estado" no cabeçalho) e o id no mapa é a sigla da UF em minúsculas. Os dados vieram em JSON
+(`fontes/brasil/estados.json`), não em planilha, e o mapa foi convertido com `fontes/brasil/mapa.config.js`.
+
 O conversor de mapa limpa o SVG do Inkscape, renomeia/agrupa os países conforme a configuração, classifica os
 caminhos sem nome em lago (dentro de um país) ou ilha (atribuída ao país mais próximo) e imprime um relatório
 para conferência. As configurações da Europa e da Ásia servem de exemplo.
@@ -98,8 +114,8 @@ para conferência. As configurações da Europa e da Ásia servem de exemplo.
 ### ✅ Implementado
 - Tela inicial de escolha do continente (cartões; continentes ainda sem dados aparecem "em breve")
 - Interface com 3 painéis (Dados, Blockly, Mapa); botão com o nome do continente volta à tela inicial
-- Tabela com 35 países da América, 50 da Europa, 50 da Ásia, 54 da África e 14 da Oceania (cada
-  continente com as suas colunas). Países sem forma visível no mapa aparecem como pontos: Mônaco,
+- Tabela com os 27 estados do Brasil, 35 países da América, 50 da Europa, 50 da Ásia, 54 da África
+  e 14 da Oceania (cada mapa com as suas colunas). Países sem forma visível no mapa aparecem como pontos: Mônaco,
   San Marino e Vaticano na Europa; Singapura e Timor-Leste na Ásia; os cinco insulares da África e
   os dez insulares da Oceania têm um círculo. Taiwan, a Caxemira, o Saara Ocidental e territórios
   fora da tabela ficam cinza.

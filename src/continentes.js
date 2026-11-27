@@ -11,6 +11,7 @@
 // vêm da planilha de respostas de um Google Forms (veja src/sala.js).
 
 import { adicionarRegioesSala, COR_PADRAO_SALA } from './sala.js';
+import { LAGOS as LAGOS_AFRICA } from './lagos/africa.js';
 
 // Como a interface chama cada linha da tabela (cabeçalho, bloco "para
 // cada ...", legenda, botões do mapa), já com o gênero certo
@@ -18,6 +19,15 @@ const TERMOS_PAISES = {
     singular: 'país', titulo: 'País', atual: 'o país atual', este: 'este país',
     um: 'um país', todos: 'Todos os países', proximo: 'Próximo país'
 };
+
+// Nome com artigo, para os textos fixos ("Regionalização da Europa",
+// "do Brasil"). artigo: 'a' (padrão) ou 'o', na entrada do catálogo
+export function comArtigo(c) {
+    return `${c.artigo || 'a'} ${c.nome}`;
+}
+export function doNome(c) {
+    return `d${comArtigo(c)}`;
+}
 
 export const CONTINENTES = {
     // Primeiro na tela inicial: a sequência didática começa pela sala
@@ -29,7 +39,9 @@ export const CONTINENTES = {
         disponivel: true,
         tipo: 'sala',
         termos: {
-            singular: 'região', titulo: 'Região', atual: 'a região atual', este: 'esta região',
+            // titulo: cabeçalho da coluna dos nomes (o número da região);
+            // "Posição" para não repetir o da coluna "Região"
+            singular: 'região', titulo: 'Posição', atual: 'a região atual', este: 'esta região',
             um: 'uma região', todos: 'Todas as regiões', proximo: 'Próxima região'
         },
         // As regiões são retângulos acrescentados ao desenho da sala
@@ -42,6 +54,25 @@ export const CONTINENTES = {
         margemRecorte: 0.2,
         // Cor das regiões não pintadas (a dos países é cinza-escuro)
         corPadrao: COR_PADRAO_SALA
+    },
+    // Brasil: as linhas da tabela são os estados (a chave continua 'País',
+    // como nos continentes; os ids do mapa são as siglas das UFs)
+    brasil: {
+        id: 'brasil',
+        nome: 'Brasil',
+        artigo: 'o',
+        icone: '🇧🇷',
+        descricao: '26 estados e o Distrito Federal',
+        disponivel: true,
+        termos: {
+            singular: 'estado', titulo: 'Estado', atual: 'o estado atual', este: 'este estado',
+            um: 'um estado', todos: 'Todos os estados', proximo: 'Próximo estado'
+        },
+        colunaInicial: 'Região',
+        ordemValores: {
+            'Região': ['Norte', 'Nordeste', 'Centro-Oeste', 'Sudeste', 'Sul']
+        },
+        ocultar: []
     },
     america: {
         id: 'america',
@@ -117,7 +148,18 @@ export const CONTINENTES = {
             'Norte ou Subsaariana': ['África Setentrional', 'África Subsaariana']
         },
         // O Saara Ocidental (eh) fica no mapa, cinza, sem país
-        ocultar: []
+        ocultar: [],
+        // Os Grandes Lagos (Vitória, Tanganica, Malawi) não são elementos:
+        // são o espaço entre os países e mostravam o fundo branco. A água
+        // (src/lagos/africa.js, de ferramentas/gerar_lagos.py) entra ATRÁS
+        // de tudo, como na América; o CSS de #grandes-lagos a pinta de azul
+        prepararMapa(svg) {
+            if (svg.querySelector('#grandes-lagos')) return;
+            const agua = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            agua.setAttribute('id', 'grandes-lagos');
+            agua.setAttribute('d', LAGOS_AFRICA);
+            svg.insertBefore(agua, svg.firstChild);
+        }
     },
     oceania: {
         id: 'oceania',
@@ -146,7 +188,9 @@ export function arquivosDoContinente(continente) {
     return {
         mapa: `src/assets/svg/${continente.id}.svg`,
         paises: `src/assets/data/${continente.id}_paises.json`,
-        iso: `src/assets/data/${continente.id}_iso.json`
+        iso: `src/assets/data/${continente.id}_iso.json`,
+        // Miniatura do cartão da tela inicial (ferramentas/gerar_miniaturas.py)
+        miniatura: `src/assets/miniaturas/${continente.id}.png`
     };
 }
 

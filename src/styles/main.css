@@ -835,9 +835,18 @@ a.continente-cartao:focus-visible {
 }
 
 .continente-icone {
-    font-size: 56px;
-    line-height: 1;
+    /* Altura fixa: as miniaturas dos mapas ficam alinhadas */
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 6px;
+}
+
+.continente-mapa {
+    width: 140px;
+    height: 100px;
+    object-fit: contain;
 }
 
 .continente-cartao.indisponivel .continente-icone {
@@ -852,11 +861,6 @@ a.continente-cartao:focus-visible {
 }
 
 .continente-cartao.indisponivel .continente-nome {
-    color: var(--text-secondary);
-}
-
-.continente-descricao {
-    font-size: 13px;
     color: var(--text-secondary);
 }
 
@@ -1151,6 +1155,285 @@ a.continente-cartao:focus-visible {
 @media (pointer: coarse) {
     .btn-cheio,
     .sala-config-link input {
+        min-height: 44px;
+    }
+}
+
+/* Tabela completa: janela sobre os painéis com todas as colunas
+   (botão "Tabela completa" do painel de dados) */
+.tabela-completa-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.tabela-completa {
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    max-height: 100%;
+    color: var(--color-neutral-black);
+    background-color: var(--color-neutral-white);
+    border: 2px solid var(--color-primary-blue);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px var(--shadow-medium);
+    overflow: hidden;
+}
+
+.tabela-completa-topo {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--color-primary-blue);
+}
+
+.tabela-completa-topo h2 {
+    font-size: 20px;
+    color: var(--color-primary-blue);
+}
+
+.tabela-completa-dica {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Barra abaixo do título com o botão "+ Nova coluna" */
+.tabela-completa-acoes {
+    flex-shrink: 0;
+    display: flex;
+    gap: 8px;
+    margin: 16px 16px 0;
+}
+
+/* Rola nas duas direções; a primeira linha (cabeçalho) e a primeira
+   coluna (país) ficam travadas. O sticky vai nas células (th/td), não
+   no thead, que nem todo navegador fixa; sem padding na área de rolagem
+   para elas grudarem na borda, sem uma faixa por onde o conteúdo passa */
+.tabela-completa-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    margin: 16px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+}
+
+.tabela-completa .dados-table {
+    /* O overflow: hidden da tabela do painel atrapalharia o sticky */
+    overflow: visible;
+    border: none;
+    border-radius: 0;
+}
+
+.tabela-completa .dados-table thead {
+    position: static;
+}
+
+.tabela-completa .dados-table th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.tabela-completa .dados-table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+/* Canto (cabeçalho "País"): fixo nas duas direções, acima de tudo */
+.tabela-completa .dados-table th:first-child {
+    left: 0;
+    z-index: 3;
+    box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.35);
+}
+
+.tabela-completa .dados-table td:first-child {
+    background-color: var(--color-neutral-white);
+    box-shadow: inset -1px 0 0 var(--border-light);
+}
+
+/* A coluna fixa precisa de fundo opaco: repete o zebrado e o hover */
+.tabela-completa .dados-table tbody tr:nth-child(even) td:first-child {
+    background-color: #F5F5F5;
+}
+
+.tabela-completa .dados-table tbody tr:hover td:first-child {
+    background-color: var(--color-neutral-beige);
+}
+
+/* Aqui as linhas não são clicáveis */
+.tabela-completa .dados-table tbody tr:hover td {
+    cursor: default;
+}
+
+/* Colunas calculadas: botão "+ Nova coluna" depois da última coluna,
+   ✕ para remover nas colunas criadas e o formulário da fórmula */
+.tabela-completa .dados-table th.th-nova-coluna {
+    padding: 4px 8px;
+    vertical-align: middle;
+}
+
+.btn-nova-coluna {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--color-primary-blue);
+    background-color: var(--color-neutral-white);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn-nova-coluna:hover,
+.btn-nova-coluna:focus-visible {
+    background-color: var(--color-neutral-beige);
+    outline: none;
+}
+
+/* Cabeçalho de coluna criada pelo aluno: tom de destaque */
+.tabela-completa .dados-table th.calculada {
+    background-color: #5e7f6b;
+}
+
+.remover-coluna {
+    margin-left: 4px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-family: inherit;
+    line-height: 18px;
+    color: var(--text-light);
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.remover-coluna:hover,
+.remover-coluna:focus-visible {
+    background: var(--color-secondary-orange);
+    outline: none;
+}
+
+.nova-coluna {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 16px 16px 0;
+    padding: 14px 16px;
+    font-size: 14px;
+    background-color: #F5F5F5; /* fixo: os painéis são sempre claros */
+    border: 2px solid var(--color-primary-blue);
+    border-radius: 8px;
+}
+
+.nova-coluna-nome,
+.nova-coluna-rotulo {
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    /* Cinza escuro fixo: o formulário é sempre claro, e
+       --text-secondary clareia no modo escuro */
+    color: #4A5358;
+}
+
+.nova-coluna-nome {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.nova-coluna-formula {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.nova-coluna-operando {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.nova-coluna input,
+.nova-coluna select {
+    padding: 6px 10px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--color-neutral-black);
+    background-color: var(--color-neutral-white);
+    border: 2px solid var(--color-primary-blue);
+    border-radius: 6px;
+}
+
+.nova-coluna-nome input {
+    flex: 1 1 240px;
+    min-width: 0;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: normal;
+}
+
+.nova-coluna-operando input {
+    width: 9em;
+}
+
+.nova-coluna select.nova-coluna-op {
+    font-weight: 700;
+    color: var(--color-secondary-orange);
+}
+
+.nova-coluna input:focus,
+.nova-coluna select:focus {
+    outline: none;
+    border-color: var(--color-secondary-orange);
+    box-shadow: 0 0 0 3px rgba(216, 117, 80, 0.25);
+}
+
+.nova-coluna-dica {
+    font-size: 12px;
+    color: #4A5358;
+}
+
+.nova-coluna input::placeholder {
+    color: #6B7478;
+    opacity: 1;
+}
+
+.nova-coluna-previa span + span::before {
+    content: " · ";
+    color: #6B7478;
+}
+
+.nova-coluna-erro {
+    font-size: 13px;
+    color: var(--color-secondary-orange);
+}
+
+.nova-coluna-botoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+@media (pointer: coarse) {
+    .nova-coluna input,
+    .nova-coluna select,
+    .btn-nova-coluna {
         min-height: 44px;
     }
 }
