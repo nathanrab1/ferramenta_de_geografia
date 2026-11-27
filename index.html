@@ -65,10 +65,35 @@
         // Componente: TelaInicial (escolha do continente). Os cartões são
         // links: abrir um continente recarrega a página com ?continente=id,
         // o que também serve de link direto para os alunos.
+        // Cores das regiões nas miniaturas: tons fortes da paleta do bloco
+        // "Pintar", bem diferentes entre si
+        const CORES_MINIATURAS = ['#e83c2c', '#ef8c34', '#f7cc3e', '#2eaa1c', '#4cbaba', '#2c5cfb', '#7c32fb', '#da3cda'];
+
+        // Cópia embaralhada (Fisher–Yates)
+        function embaralhar(lista) {
+            const l = [...lista];
+            for (let i = l.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [l[i], l[j]] = [l[j], l[i]];
+            }
+            return l;
+        }
+
         const TelaInicial = {
             name: 'TelaInicial',
             data() {
-                return { continentes: LISTA_CONTINENTES };
+                // Cada miniatura é um SVG regionalizado (src/assets/miniaturas/
+                // miniaturas.js, de ferramentas/gerar_miniaturas.py): um path
+                // por região, pintado pelas variáveis --r0, --r1... com cores
+                // sorteadas a cada visita, sem repetir cor no mesmo mapa
+                const cores = Object.fromEntries(LISTA_CONTINENTES.map(c => [c.id,
+                    Object.fromEntries(embaralhar(CORES_MINIATURAS).map((cor, i) => [`--r${i}`, cor]))]));
+                return { continentes: LISTA_CONTINENTES, miniaturas: {}, cores };
+            },
+            async created() {
+                // Só a tela inicial precisa das miniaturas: carregadas aqui
+                const { MINIATURAS } = await import('./src/assets/miniaturas/miniaturas.js');
+                this.miniaturas = MINIATURAS;
             },
             template: `
                 <div class="tela-inicial">
@@ -86,9 +111,9 @@
                             :aria-disabled="!c.disponivel"
                             :title="c.descricao"
                         >
-                            <!-- Miniatura do mapa (ferramentas/gerar_miniaturas.py) -->
+                            <!-- Miniatura regionalizada (ferramentas/gerar_miniaturas.py) -->
                             <span class="continente-icone" aria-hidden="true">
-                                <img class="continente-mapa" :src="miniaturaDo(c)" alt="">
+                                <span class="continente-mapa" :style="cores[c.id]" v-html="miniaturas[c.id] || ''"></span>
                             </span>
                             <span class="continente-nome">{{ c.nome }}</span>
                             <span v-if="!c.disponivel" class="continente-etiqueta">Em breve</span>
@@ -98,8 +123,7 @@
                 </div>
             `,
             methods: {
-                urlDo: urlDoContinente,
-                miniaturaDo: (c) => arquivosDoContinente(c).miniatura
+                urlDo: urlDoContinente
             }
         };
 

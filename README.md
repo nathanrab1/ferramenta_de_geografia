@@ -89,9 +89,12 @@ python3 ferramentas/converter_tabela.py <id> "fontes/<id>/planilha.xlsx"   # usa
 python3 ferramentas/converter_mapa.py <id> "fontes/<id>/mapa-bruto.svg"    # usa fontes/<id>/mapa.config.js
 ```
 
-Os cartões da tela inicial mostram uma miniatura de cada mapa (`src/assets/miniaturas/<id>.png`,
-só os países da tabela, recortados e coloridos pela coluna de região que o mapa abre por padrão,
-com as mesmas cores na mesma ordem em todos os mapas; na sala, cada carteira na cor da sua região). Depois de criar ou mudar um mapa, gere de novo:
+Os cartões da tela inicial mostram uma miniatura de cada mapa, regionalizada pela coluna que o mapa
+abre por padrão (na sala, as carteiras de cada região), com cores sorteadas a cada visita, sem repetir
+cor no mesmo mapa. São SVGs simplificados (contornos reduzidos ao tamanho da miniatura), com um
+`<path class="r0">`, `"r1"`... por região, guardados em `src/assets/miniaturas/miniaturas.js`; a tela
+inicial carrega esse módulo e pinta cada região pelas variáveis `--r0`, `--r1`...
+Depois de criar ou mudar um mapa, gere de novo:
 
 ```bash
 python3 ferramentas/gerar_miniaturas.py [id ...]    # sem ids: todos os mapas

@@ -846,8 +846,32 @@ a.continente-cartao:focus-visible {
 .continente-mapa {
     width: 140px;
     height: 100px;
-    object-fit: contain;
 }
+
+.continente-mapa svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+/* Miniatura: um path por região, na cor sorteada (--r0, --r1... no
+   style do cartão); fronteiras brancas finas entre os países */
+.continente-mapa path {
+    stroke: #ffffff;
+    stroke-width: 0.5;
+    stroke-linejoin: round;
+}
+
+.continente-mapa .r0 { fill: var(--r0); }
+.continente-mapa .r1 { fill: var(--r1); }
+.continente-mapa .r2 { fill: var(--r2); }
+.continente-mapa .r3 { fill: var(--r3); }
+.continente-mapa .r4 { fill: var(--r4); }
+.continente-mapa .r5 { fill: var(--r5); }
+.continente-mapa .r6 { fill: var(--r6); }
+.continente-mapa .r7 { fill: var(--r7); }
+/* Lousa e mesa do professor, na sala */
+.continente-mapa .fixo { fill: var(--color-primary-blue); }
 
 .continente-cartao.indisponivel .continente-icone {
     filter: grayscale(1);

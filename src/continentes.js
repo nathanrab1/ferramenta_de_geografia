@@ -188,9 +188,7 @@ export function arquivosDoContinente(continente) {
     return {
         mapa: `src/assets/svg/${continente.id}.svg`,
         paises: `src/assets/data/${continente.id}_paises.json`,
-        iso: `src/assets/data/${continente.id}_iso.json`,
-        // Miniatura do cartão da tela inicial (ferramentas/gerar_miniaturas.py)
-        miniatura: `src/assets/miniaturas/${continente.id}.png`
+        iso: `src/assets/data/${continente.id}_iso.json`
     };
 }
 
